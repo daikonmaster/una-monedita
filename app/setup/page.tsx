@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { getConfigStatus } from "@/lib/auth/session";
+import { getConfigStatus, usingBuildSecret } from "@/lib/auth/session";
 import { SetupForm, type SetupReason } from "./setup-form";
 
 export const dynamic = "force-dynamic";
@@ -23,5 +23,12 @@ export default async function SetupPage({
   const status = await getConfigStatus(h.get("cookie") ?? "", h.get("host"));
   const { reason } = await searchParams;
   const r = typeof reason === "string" ? (REASONS as string[]).includes(reason) : false;
-  return <SetupForm connected={status.connected} via={status.via} reason={r ? (reason as SetupReason) : null} />;
+  return (
+    <SetupForm
+      connected={status.connected}
+      via={status.via}
+      reason={r ? (reason as SetupReason) : null}
+      autoSecret={usingBuildSecret()}
+    />
+  );
 }

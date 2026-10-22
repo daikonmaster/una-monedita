@@ -109,12 +109,12 @@ Reglas:
 
 ## Seguridad
 
-- **Una sola credencial:** la cookie cifrada (JWE `dir`/`A256GCM`, clave derivada de `AUTH_COOKIE_SECRET`) con el token y los IDs de las bases. `httpOnly`, `SameSite=Lax`, `Secure` y prefijo `__Host-` en producción.
+- **Una sola credencial:** la cookie cifrada (JWE `dir`/`A256GCM`, clave derivada de `AUTH_COOKIE_SECRET` o, si falta, de una generada al compilar) con el token y los IDs de las bases. `httpOnly`, `SameSite=Lax`, `Secure` y prefijo `__Host-` en producción.
 - **Sin cookie válida solo se ve `/setup`:** páginas redirigen a `/setup`, la API responde `401 { code: "notion_disconnected" }`.
 - **CSRF:** como `/setup` es público, el proxy corta antes de cualquier ruta (`lib/auth/csrf.ts`): a `/api/*` no se llega navegando desde otro sitio, las escrituras exigen mismo origen (`Origin` / `Sec-Fetch-Site`) y el cuerpo debe ser `application/json` (un formulario ajeno no puede enviarlo). Evita que otro sitio conecte tu navegador al Notion de un atacante.
 - **Límite de intentos** en `/api/setup` (10 cada 15 minutos por IP).
 - **Sin respaldo de servidor:** `lib/notion/*` exige las credenciales de cada pedido; nunca cae a variables de entorno. Las `NOTION_*` y `DEV_AUTH_BYPASS` son solo para desarrollo en `localhost` (el bypass exige `NODE_ENV=development`, `DEV_AUTH_BYPASS=1` y un host local, así que no sirve desde la red local ni con DNS rebinding). **Nunca** definirlas en Vercel.
-- **Rotar `AUTH_COOKIE_SECRET`** desconecta a todos los dispositivos.
+- **Rotar `AUTH_COOKIE_SECRET`** desconecta a todos los dispositivos. Sin esa variable, `next.config.ts` genera una clave al azar al compilar (`.next/cache/um-auth-secret`, inlineada como `UM_BUILD_SECRET` en el código del servidor): la app funciona sin configurar nada, pero si se rehace el build sin esa caché la clave cambia y hay que reconectar. `/setup` lo avisa.
 - **`POST /api/seed?reset=1`** archiva todas las categorías: es POST con JSON y mismo origen, no un link.
 
 ---
@@ -172,13 +172,13 @@ pnpm install
 cp .env.example .env.local
 ```
 
-En `.env.local` alcanza con:
+En `.env.local` se recomienda:
 
 ```env
 AUTH_COOKIE_SECRET=   # mínimo 32 caracteres: openssl rand -base64 32
 ```
 
-Después `pnpm dev` y abrí http://localhost:3000: te lleva a `/setup` para conectar tu Notion, igual que en producción.
+Es opcional: `pnpm dev` funciona sin `.env.local`, pero sin la variable la clave se genera sola y la conexión se pierde si borrás la carpeta `.next`. Después `pnpm dev` y abrí http://localhost:3000: te lleva a `/setup` para conectar tu Notion, igual que en producción.
 
 Opcional, **solo en tu máquina**: para saltar `/setup` con tus credenciales (solo funciona abriendo por `localhost`), agregá `DEV_AUTH_BYPASS=1`, `NOTION_TOKEN` y los `NOTION_DB_*` (ver `.env.example`). Esas credenciales leen tus datos reales.
 
@@ -205,13 +205,17 @@ Además: `pnpm type-check`, `pnpm lint` y `pnpm build`.
 
 ## Deploy
 
-Ver [`DEPLOY.md`](DEPLOY.md) para instalar tu propia copia. Para el deploy de este proyecto:
+Ver [`DEPLOY.md`](DEPLOY.md) para instalar tu propia copia. Para desplegar un fork sin configurar nada:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ffdrecabarren%2Funa-monedita&project-name=una-monedita&repository-name=una-monedita)
+
+Para el deploy de este proyecto:
 
 ```bash
 npx vercel --prod --yes
 ```
 
-Solo en el team `franco-s-projects02`, proyecto `una-monedita` (ver las reglas de cuenta en `CLAUDE.md`). La única variable obligatoria es `AUTH_COOKIE_SECRET`.
+Solo en el team `franco-s-projects02`, proyecto `una-monedita` (ver las reglas de cuenta en `CLAUDE.md`). La única variable recomendada es `AUTH_COOKIE_SECRET` (sin ella la app funciona, pero cada nuevo deploy puede pedir reconectar los dispositivos).
 
 ---
 

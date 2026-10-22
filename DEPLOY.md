@@ -5,11 +5,21 @@ Tus datos viven solo en tu Notion y tu Vercel. Nadie más los ve.
 
 ---
 
+## Opción rápida
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ffdrecabarren%2Funa-monedita&project-name=una-monedita&repository-name=una-monedita)
+
+El botón copia el repositorio a tu GitHub y lo despliega en tu Vercel sin configurar
+nada. Después ve a la sección 5 (Conecta Notion); si aún no tienes tu plantilla ni tu
+integración de Notion, haz antes las secciones 1 a 3.
+
+---
+
 ## Resumen
 
 1. Duplica la plantilla de Notion a tu cuenta
 2. Crea una integración de Notion y compártela con tu página
-3. Despliega la app en tu propio Vercel (una sola variable: `AUTH_COOKIE_SECRET`)
+3. Despliega la app en tu propio Vercel (sin variables obligatorias; se recomienda `AUTH_COOKIE_SECRET`)
 4. Conecta Notion dentro de la app (`/setup`)
 5. Usa la app
 
@@ -39,22 +49,29 @@ ingreso. Cada persona usa su propia cuenta de Notion.
 
 ## 4. Despliega en Vercel
 
-1. Acepta la invitación de colaborador al repositorio privado de GitHub.
-2. Entra a <https://vercel.com> → **New Project** → importa el repositorio.
-3. Configura la única variable de entorno **obligatoria**:
+No hay ninguna variable de entorno obligatoria. Elige una de estas dos formas:
 
-   | Variable | Valor |
-   |----------|-------|
-   | `AUTH_COOKIE_SECRET` | Texto aleatorio de 32+ caracteres (con `openssl rand -base64 32`) |
+- **Opción A, botón:** pulsa el botón **Deploy with Vercel** de arriba. Copia el
+  repositorio a tu GitHub y lo despliega en tu Vercel.
+- **Opción B, fork:** haz un fork del repositorio en GitHub, entra a
+  <https://vercel.com> → **New Project** → importa tu fork y pulsa **Deploy**.
 
-   Con ese secreto se cifra la cookie que guarda tu conexión a Notion. Si lo cambias
-   después, todos los dispositivos pierden la conexión y hay que reconectar. Mantenlo
-   igual en Production y Preview.
+Espera a que termine el deploy.
 
-   **No definas** `NOTION_*` ni `DEV_AUTH_BYPASS` en Vercel: son solo para desarrollo
-   local, y en un deploy compartido harían que otra persona viera tu Notion.
+**Variable recomendada**
 
-4. Pulsa **Deploy**. Espera a que termine.
+| Variable | Valor |
+|----------|-------|
+| `AUTH_COOKIE_SECRET` | Texto aleatorio de 32+ caracteres (con `openssl rand -base64 32`) |
+
+Con ese secreto se cifra la cookie que guarda tu conexión a Notion. Sin ella la app
+funciona igual (genera una clave propia al compilar), pero cada nuevo deploy puede pedir
+que reconectes cada dispositivo. Para evitarlo, defínela en **Settings → Environment
+Variables**, con el mismo valor en Production y Preview, y vuelve a desplegar. Si la
+cambias después, todos los dispositivos pierden la conexión y hay que reconectar.
+
+**No definas** `NOTION_*` ni `DEV_AUTH_BYPASS` en Vercel: son solo para desarrollo
+local, y en un deploy compartido harían que otra persona viera tu Notion.
 
 ## 5. Conecta Notion
 
@@ -101,6 +118,9 @@ personas comparten una instalación, deben confiar en quien la administra.
   reconecta (¿regeneraste el token o quitaste la integración de la página?).
 - Si `/setup` dice que no encuentra alguna base de datos: revisa que duplicaste la
   plantilla correcta y que compartiste la página con tu integración (paso 3).
-- Si ves "Falta AUTH_COOKIE_SECRET": define la variable en Vercel (32+ caracteres,
-  distinta del ejemplo de `.env.example`) y vuelve a desplegar.
+- Si ves "Falta AUTH_COOKIE_SECRET" o "tiene el valor de ejemplo": definiste la variable
+  con menos de 32 caracteres o con el valor de `.env.example`. Corrígela en Vercel
+  (32+ caracteres, distinta del ejemplo) o bórrala, y vuelve a desplegar.
+- Si la app te pide conectar Notion otra vez después de un deploy y no definiste
+  `AUTH_COOKIE_SECRET`: la clave automática cambió. Define la variable para evitarlo.
 - Para desarrollo local (`pnpm dev`) ver el README.
