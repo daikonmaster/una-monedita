@@ -35,14 +35,34 @@ const REMEMBER_MAX_AGE = 60 * 60 * 24 * 400; // tope que aceptan los navegadores
 const SHORT_TTL = 60 * 60 * 24; // sin "Recordar": 24 h como máximo
 
 // ---- Secreto y claves ----
+// El secreto sale de AUTH_COOKIE_SECRET (recomendado). Si no está definido, se usa un
+// respaldo: next.config.ts genera uno al azar al compilar (.next/cache/um-auth-secret) y
+// Next lo inlinea como process.env.UM_BUILD_SECRET en el código del servidor. Así un fork
+// recién desplegado funciona sin configurar nada; a cambio, si el build se rehace sin esa
+// caché el valor cambia y cada dispositivo tiene que reconectar. Hay que escribir
+// `process.env.UM_BUILD_SECRET` literal: Next reemplaza ese texto exacto al compilar.
+//
 // Valor de ejemplo de .env.example: usarlo en un deploy dejaría cookies cifradas con
 // una clave pública.
 const PLACEHOLDER_SECRET = "cambiame_por_32_chars_random_xxxxxxxxxxxxxxxxxxxxxxx";
 
+function cookieSecret(): string | undefined {
+  return process.env.AUTH_COOKIE_SECRET || process.env.UM_BUILD_SECRET || undefined;
+}
+
+// true si la instalación cifra con la clave automática (sin AUTH_COOKIE_SECRET).
+export function usingBuildSecret(): boolean {
+  return !process.env.AUTH_COOKIE_SECRET && !!process.env.UM_BUILD_SECRET;
+}
+
 // null si el secreto sirve; si no, el motivo (el proxy responde 503 con este texto).
 export function secretProblem(): string | null {
   const secret = process.env.AUTH_COOKIE_SECRET;
-  if (!secret || secret.length < 32) {
+  if (!secret) {
+    if (process.env.UM_BUILD_SECRET) return null;
+    return "Falta AUTH_COOKIE_SECRET (mínimo 32 caracteres) en las variables de entorno. Ver DEPLOY.md.";
+  }
+  if (secret.length < 32) {
     return "Falta AUTH_COOKIE_SECRET (mínimo 32 caracteres) en las variables de entorno. Ver DEPLOY.md.";
   }
   if (secret === PLACEHOLDER_SECRET) {
@@ -55,7 +75,7 @@ export function secretProblem(): string | null {
 // nueva y la legacy NO comparten clave: una no puede hacerse pasar por la otra.
 const keyCache = new Map<string, Promise<Uint8Array>>();
 function deriveKey(label: "legacy" | "um_notion:v1"): Promise<Uint8Array> {
-  const secret = process.env.AUTH_COOKIE_SECRET;
+  const secret = cookieSecret();
   if (!secret) return Promise.reject(new Error("AUTH_COOKIE_SECRET not set"));
   const id = `${label}|${secret}`;
   let key = keyCache.get(id);

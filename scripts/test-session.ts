@@ -26,6 +26,7 @@ import {
   isLocalHost,
   devAuthBypass,
   secretProblem,
+  usingBuildSecret,
   notionCookieOptions,
   notionCookieClearOptions,
   type NotionCreds,
@@ -194,6 +195,35 @@ async function main() {
   env.AUTH_COOKIE_SECRET = "cambiame_por_32_chars_random_xxxxxxxxxxxxxxxxxxxxxxx";
   check("secreto de ejemplo de .env.example", (secretProblem() ?? "").includes("ejemplo"));
   env.AUTH_COOKIE_SECRET = saved;
+
+  // ---- secreto automático (UM_BUILD_SECRET, generado al compilar por next.config.ts) ----
+  eq("con AUTH_COOKIE_SECRET no se usa el automático", usingBuildSecret(), false);
+  const BUILD_SECRET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP-"; // 43 caracteres, como base64url de 32 bytes
+  eq("el secreto de prueba tiene 43 caracteres", BUILD_SECRET.length, 43);
+  env.UM_BUILD_SECRET = BUILD_SECRET;
+  eq("ambos definidos → usingBuildSecret false", usingBuildSecret(), false);
+  eq("ambos definidos → secretProblem null", secretProblem(), null);
+  const withExplicit = await createNotionCookie(creds, true);
+
+  delete env.AUTH_COOKIE_SECRET;
+  eq("solo UM_BUILD_SECRET → secretProblem null", secretProblem(), null);
+  eq("solo UM_BUILD_SECRET → usingBuildSecret true", usingBuildSecret(), true);
+  const withAuto = await createNotionCookie(creds, true);
+  const autoBack = await readNotionCookie(withAuto);
+  eq("secreto automático: ida y vuelta", autoBack?.creds, creds);
+  eq("secreto automático: remember", autoBack?.remember, true);
+  eq("secreto automático: la cookie hecha con AUTH_COOKIE_SECRET no se lee", await readNotionCookie(withExplicit), null);
+  env.AUTH_COOKIE_SECRET = "corto";
+  check("AUTH_COOKIE_SECRET corto no cae al automático", secretProblem() !== null);
+  env.AUTH_COOKIE_SECRET = "";
+  eq("AUTH_COOKIE_SECRET vacío + automático → secretProblem null", secretProblem(), null);
+  eq("AUTH_COOKIE_SECRET vacío + automático → usingBuildSecret true", usingBuildSecret(), true);
+  env.AUTH_COOKIE_SECRET = saved;
+  eq("una cookie hecha con el secreto automático NO se lee con AUTH_COOKIE_SECRET", await readNotionCookie(withAuto), null);
+  eq("con ambos, la cookie hecha con AUTH_COOKIE_SECRET sigue leyéndose", (await readNotionCookie(withExplicit))?.creds, creds);
+  delete env.UM_BUILD_SECRET;
+  eq("sin UM_BUILD_SECRET → usingBuildSecret false", usingBuildSecret(), false);
+  eq("estado de env restaurado", secretProblem(), null);
 
   // ---- opciones de cookie ----
   const on = notionCookieOptions(true, true);

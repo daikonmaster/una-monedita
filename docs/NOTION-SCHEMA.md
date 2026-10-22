@@ -1,7 +1,7 @@
 # Esquema de Notion — Una Monedita (guía para agentes)
 
 Este documento describe la base de Notion que usa la app "Una Monedita" (finanzas
-personales de Franco Recabarren) para que un agente (ej. Hermes) pueda leerla y
+personales) para que un agente (ej. Hermes) pueda leerla y
 operarla directamente por API sin tener que inferir la estructura.
 
 Copia canónica: esta misma guía vive también como página hija de Notion
@@ -16,15 +16,14 @@ partir de él) — volvé a publicar después de editar este archivo.
 
 ## Workspace y credenciales
 
-- Workspace: "Notion de Franco Recabarren".
+- Workspace: el de la persona que conectó la app.
 - Integración: "UNA MONEDITA" (Internal Integration Token, header `Authorization: Bearer <token>`).
 - Todas las llamadas REST necesitan `Notion-Version: 2022-06-28`.
 - El token NO se documenta acá — vive en `NOTION_TOKEN` (env var / secret manager),
   nunca en texto plano en el repo ni en esta página.
-- **Página principal "Una Monedita":** a la fecha de escribir esto hay dos
-  páginas con ese título en el workspace (histórico de duplicados). Antes de
-  operar, confirmar cuál es la viva buscando "Una Monedita" y verificando que
-  contiene las 6 bases de datos listadas abajo como hijas directas.
+- **Página principal "Una Monedita":** si hay más de una página con ese título
+  en el workspace, la viva es la que tiene las 6 bases de datos listadas abajo
+  como hijas directas. Antes de operar, confirmarlo buscando "Una Monedita".
 
 ## Cómo consultar (leer filas)
 
@@ -47,7 +46,10 @@ recuperable desde la papelera de Notion).
 
 ## Bases de datos
 
-Todas cuelgan de la página principal "Una Monedita". IDs (UUID con guiones):
+Todas cuelgan de la página principal "Una Monedita". IDs (UUID con guiones).
+Los IDs de esta tabla y de los ejemplos de abajo son los de la instalación
+original; al publicar la guía desde la app se reemplazan por los de la cuenta
+conectada.
 
 | Base | ID | Env var |
 |---|---|---|
@@ -198,7 +200,7 @@ fuente de verdad del monto, usar siempre `Amount`.
 ### Crear un fijo (gasto o ingreso recurrente)
 
 Ejemplo: gimnasio, $15000 ARS, todos los meses cerca del día 14 (queda en
-"Pendiente" hasta que Franco registra el pago — no hay cobro automático):
+"Pendiente" hasta que el usuario registra el pago — no hay cobro automático):
 
 ```json
 POST /v1/pages
@@ -250,7 +252,7 @@ POST /v1/databases/36d5c48e-39b6-81fd-b57c-c1d4033101e1/query
 ```
 
 Todos los vencidos (activos, `NextChargeDate <= hoy`) figuran "Pendiente" en la
-app — ningún fijo se cobra solo, no registrar pagos sin que Franco lo pida.
+app — ningún fijo se cobra solo, no registrar pagos sin que el usuario lo pida.
 
 ### Cobrar un fijo
 
@@ -260,7 +262,7 @@ Mismos pasos que usa el botón "Registrar pago" de la app
 1. **Releer la fila primero** (`GET /v1/pages/{id}`) y anotar su
    `NextChargeDate`. Si ya cambió respecto a lo que se vio al decidir cobrar,
    alguien ya registró ese pago mientras tanto — no repetir.
-2. Definir la fecha del cobro (para un agente: preguntarle a Franco qué fecha
+2. Definir la fecha del cobro (para un agente: preguntarle al usuario qué fecha
    usar, no asumir "hoy").
 3. Calcular la nueva `NextChargeDate` = una ocurrencia después de la
    `NextChargeDate` leída en el paso 1 (no después de la fecha del cobro),
@@ -325,7 +327,7 @@ siguiente todavía (queda para un agente/cron futuro).
 
 | Propiedad | Tipo | Notas |
 |---|---|---|
-| `Pair` | title | Ej. `USD/ARS` |
+| `Name` | title | Ej. `USD/ARS` |
 | `Rate` | number | |
 | `Date` | date | Un valor cacheado por par y por día |
 | `Source` | select | `exchangerate.host` \| `CoinGecko` \| `manual` |

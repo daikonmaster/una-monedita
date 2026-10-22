@@ -9,6 +9,7 @@ import {
   type NotionCreds,
 } from "@/lib/auth/session";
 import { checkRateLimit, clientIp } from "@/lib/auth/rate-limit";
+import { ensureSubscriptionsSchema } from "@/lib/notion/subscriptions";
 
 export const dynamic = "force-dynamic";
 
@@ -142,7 +143,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. Cookie cifrada con las credenciales descubiertas (única credencial de la app).
+  // 4. Preparar Subscriptions: agrega las propiedades que falten (Type, DueDay, etc.).
+  // Best-effort: si falla no bloquea la conexión ("Preparar Notion" queda de respaldo).
+  try {
+    await ensureSubscriptionsSchema(found.subscriptions!, notionToken);
+  } catch (err) {
+    console.warn("[setup] subscriptions schema:", err);
+  }
+
+  // 5. Cookie cifrada con las credenciales descubiertas (única credencial de la app).
   const creds: NotionCreds = {
     token: notionToken,
     dbIds: {

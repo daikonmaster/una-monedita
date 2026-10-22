@@ -228,10 +228,13 @@ export function SetupForm({
   connected,
   via,
   reason,
+  autoSecret,
 }: {
   connected: boolean;
   via: "cookie" | "legacy" | "dev" | null;
   reason: SetupReason | null;
+  // true si el servidor cifra la cookie con la clave automática (sin AUTH_COOKIE_SECRET)
+  autoSecret: boolean;
 }) {
   // Si recién se conectó y volvió sin conexión, el navegador no guardó la cookie.
   const [lostCookie, setLostCookie] = useState(false);
@@ -335,6 +338,12 @@ export function SetupForm({
           </div>
         ) : (
           <ConnectFlow />
+        )}
+
+        {autoSecret && (
+          <p style={{ fontSize: 12.5, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.45, textAlign: "center", marginTop: 16 }}>
+            Esta instalación usa una clave automática: después de cada nuevo deploy puede pedirte conectar otra vez. Para evitarlo, definí AUTH_COOKIE_SECRET en Vercel (ver DEPLOY.md).
+          </p>
         )}
       </div>
     </div>
