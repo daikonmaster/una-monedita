@@ -44,10 +44,68 @@ Los dispositivos que estaban conectados con la versión anterior (con contraseñ
 
 Cada persona usa **su propia cuenta de Notion**: no hay datos compartidos entre usuarios.
 
-- **Recomendado:** cada persona hace su propio deploy desde el repo (ver `DEPLOY.md`). Así el servidor es suyo.
-- **Actualizaciones:** para recibirlas, hacé fork y usá **Sync fork** en GitHub (ver `DEPLOY.md`).
+- **Recomendado:** cada persona hace su propio deploy desde un fork (ver "Tu propia copia" abajo y `DEPLOY.md`). Así el servidor es suyo.
 - Una misma instalación puede servir a varias personas: cada navegador trae su cookie y ve solo su Notion. Pero el servidor usa tu token para leer tu Notion, así que conectá solo en una instalación tuya o de alguien de confianza.
 - Si se pierde un dispositivo: en notion.so/my-integrations regenerá el token de la integración y volvé a conectar. Desconectar solo borra la cookie de ese dispositivo; el token sigue siendo válido en Notion hasta que lo regeneres.
+
+---
+
+## Tu propia copia (fork + Vercel)
+
+Cualquiera puede tener su propia UnaMonedita gratis, con sus datos en su Notion. No hace falta saber programar ni configurar variables.
+
+### 1. Instalar
+
+1. **GitHub:** entrá a [github.com/fdrecabarren/una-monedita](https://github.com/fdrecabarren/una-monedita) con tu cuenta y tocá **Fork** → **Create fork**.
+2. **Vercel:** creá tu cuenta en [vercel.com](https://vercel.com) entrando con GitHub (plan Hobby, gratis). **Add New → Project** → importá tu fork `tu-usuario/una-monedita` → **Deploy**. No cargues ninguna variable.
+3. **Notion:** abrí la [plantilla](https://app.notion.com/p/UNA-MONEDITA-3795c48e39b6803da9abf7ab40919b39) (con tu sesión de Notion iniciada) y tocá **Duplicar**. Creá una integración en [notion.so/my-integrations](https://www.notion.so/my-integrations) y conectala a tu página copiada (menú ⋯ → Conexiones).
+4. **App:** abrí la dirección que te dio Vercel (`algo.vercel.app`). Te lleva a `/setup`: pegá el token y la URL de tu página y tocá **Conectar**.
+
+El paso a paso con más detalle (y qué hacer si algo falla) está en [`DEPLOY.md`](DEPLOY.md).
+
+> El botón **Deploy with Vercel** (en `DEPLOY.md`) también instala, pero crea una copia independiente que **no recibe actualizaciones**. Si querés las mejoras futuras, usá fork.
+
+### 2. Recibir actualizaciones
+
+Cuando el repositorio original cambia, tu fork **no se actualiza solo**: GitHub muestra en tu fork el aviso "This branch is X commits behind". Vercel, en cambio, sí despliega solo cada vez que tu fork cambia. Hay dos formas de traer los cambios:
+
+- **A mano (siempre funciona):** en tu fork, **Sync fork** → **Update branch**. En un par de minutos Vercel publica la versión nueva.
+- **Automático (recomendado):** el repo trae el workflow [`.github/workflows/sync-upstream.yml`](.github/workflows/sync-upstream.yml), que sincroniza tu fork una vez por día. GitHub lo deja apagado en los forks, así que hay que activarlo **una sola vez**:
+  1. En tu fork, pestaña **Actions** → **I understand my workflows, go ahead and enable them**.
+  2. Elegí el workflow **Sincronizar con el original** → **Enable workflow** (si aparece) → **Run workflow** para probarlo.
+  3. Listo: desde ahí tu fork se pone al día solo cada día, y Vercel despliega solo.
+
+Cuándo el automático no alcanza (se resuelve con **Sync fork** a mano):
+
+- Si el original cambió archivos de `.github/workflows/` (GitHub no deja que Actions los copie).
+- Si editaste tu fork y tus cambios chocan con los del original. Si solo usás la app, no edites el fork.
+- Si tu fork pasa 60 días sin cambios, GitHub pausa los workflows programados: volvé a activarlo en **Actions**.
+
+En Vercel no hay que hacer nada: cada actualización de tu fork se despliega sola. Tus datos no se tocan nunca, porque viven en tu Notion.
+
+### 3. Recomendaciones
+
+- **`AUTH_COOKIE_SECRET` (opcional, recomendado):** sin ella la app funciona, pero algún deploy puede pedirte conectar Notion otra vez. Para evitarlo: Vercel → tu proyecto → **Settings → Environment Variables** → `AUTH_COOKIE_SECRET` = un texto al azar de 32+ caracteres (`openssl rand -base64 32`), en Production y Preview → **Redeploy**. No la cambies después.
+- **No cargues** `NOTION_TOKEN`, `NOTION_DB_*` ni `DEV_AUTH_BYPASS` en Vercel: son solo para desarrollo local.
+- **Dominio propio:** Vercel → **Settings → Domains**. No hay que cambiar código; la primera vez por el dominio nuevo hay que conectar Notion otra vez.
+- **Tu token de Notion es tu llave:** no lo compartas. Si lo perdés o se filtró, regeneralo en notion.so/my-integrations y volvé a conectar.
+- **Plan gratis de Notion:** si el workspace se queda sin bloques, Notion no deja crear movimientos nuevos (la app lo avisa). Se arregla en Notion, no en la app.
+
+### Para quien mantiene el repo original
+
+Cada cambio llega a todos los forks, así que:
+
+- **Si agregás una propiedad o base a Notion**, la app tiene que crearla sola al conectar (como `ensureSubscriptionsSchema` en `/api/setup`) y además hay que agregarla a la plantilla. Si no, las copias ya instaladas se rompen.
+- **No agregues variables de entorno obligatorias:** un fork las desconoce y el deploy fallaría. Si hace falta una, que tenga un valor por defecto que funcione.
+- **No pongas URLs, IDs ni datos personales fijos en el código:** todo sale de la conexión de cada persona.
+- Mantené la plantilla de Notion publicada con **Permitir duplicar como plantilla** activado.
+
+### Para agentes (IA)
+
+- **Trabajar en el código:** leé primero [`CLAUDE.md`](CLAUDE.md) (reglas, arquitectura, caveats de Notion y Vercel). Este README describe qué hace la app.
+- **Operar los datos de un usuario por la API de Notion:** usá [`docs/NOTION-SCHEMA.md`](docs/NOTION-SCHEMA.md) (bases, propiedades, valores válidos y recetas). Desde la app, Ajustes → Mantenimiento → **Publicar guía para agentes** la copia en el Notion del usuario con los IDs de **sus** bases.
+- Los IDs de bases que aparecen en `CLAUDE.md` y `docs/NOTION-SCHEMA.md` son los de la instalación original: en un fork, los de cada persona salen de su conexión (`/api/me?full=1`).
+- No deployar en otra cuenta de Vercel que no sea la del dueño del fork, y no commitear `.env.local`.
 
 ---
 
@@ -255,6 +313,7 @@ lib/
   icon-registry.ts  icon-catalog.ts  tx-filter.ts  utils.ts
 
 proxy.ts                # Acceso: secreto, CSRF, rutas públicas, cookie, migración
+.github/workflows/      # sync-upstream.yml: los forks se sincronizan solos con el original
 scripts/                # test-*.ts (puros), publish-notion-guide.ts, gen-icons.mjs
 docs/NOTION-SCHEMA.md   # Esquema de las 6 bases para agentes
 ```

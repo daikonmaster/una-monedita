@@ -1,0 +1,33 @@
+# Mantiene un fork al día con el repositorio original (fdrecabarren/una-monedita).
+#
+# Solo corre en forks: en el repositorio original el job se saltea. Una vez por día
+# (y cuando lo disparás a mano desde la pestaña Actions) trae los cambios de la rama
+# main del original a la main del fork. Vercel despliega solo cada vez que main cambia.
+#
+# GitHub desactiva Actions en los forks: hay que activarlas una vez en la pestaña
+# Actions del fork ("I understand my workflows, go ahead and enable them").
+#
+# Si el fork tiene commits propios que chocan con los del original, la sincronización
+# falla (no pisa nada): se resuelve a mano con "Sync fork" en GitHub. Lo mismo pasa
+# cuando el original cambia archivos de .github/workflows (el token de Actions no
+# puede tocarlos).
+
+name: Sincronizar con el original
+
+on:
+  schedule:
+    - cron: "23 6 * * *" # todos los días, 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.repository != 'fdrecabarren/una-monedita'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Traer los cambios de fdrecabarren/una-monedita
+        run: gh repo sync "$GITHUB_REPOSITORY" --source fdrecabarren/una-monedita --branch main
+        env:
+          GH_TOKEN: ${{ github.token }}
