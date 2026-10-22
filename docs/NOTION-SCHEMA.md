@@ -325,7 +325,7 @@ siguiente todavía (queda para un agente/cron futuro).
 
 | Propiedad | Tipo | Notas |
 |---|---|---|
-| `Pair` | title | Ej. `USD/ARS` |
+| `Name` | title | Ej. `USD/ARS` |
 | `Rate` | number | |
 | `Date` | date | Un valor cacheado por par y por día |
 | `Source` | select | `exchangerate.host` \| `CoinGecko` \| `manual` |

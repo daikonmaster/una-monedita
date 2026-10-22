@@ -82,7 +82,7 @@ Lista de gastos e ingresos fijos (alquiler, suscripciones, sueldo). Cada fila di
 - **Tema:** automático, claro u oscuro. **Color:** Verde, Turquesa o **Grafito** (escala de grises; ingresos en verde, gastos en rojo y categorías conservan su color).
 - **Estilo del resumen** en el móvil.
 - **Notion:** estado, cambiar de cuenta, desconectar.
-- **Mantenimiento:** *Preparar Notion* (agrega a Subscriptions las propiedades que falten) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion).
+- **Mantenimiento:** *Preparar Notion* (agrega a Subscriptions las propiedades que falten; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion).
 
 ---
 
@@ -142,7 +142,7 @@ Todas las rutas (salvo `/api/setup`) requieren la cookie de conexión. Los fallo
 
 | Ruta | Método | Función |
 |------|--------|---------|
-| `/api/setup` | POST | Conecta Notion (`notionToken`, `pageUrl`, `remember`): valida el token, encuentra las 6 bases y guarda la cookie. Pública, con límite de intentos |
+| `/api/setup` | POST | Conecta Notion (`notionToken`, `pageUrl`, `remember`): valida el token, encuentra las 6 bases, agrega a Subscriptions las propiedades que falten (si falla, no bloquea) y guarda la cookie. Pública, con límite de intentos |
 | `/api/setup` | DELETE | Desconecta este dispositivo (borra la cookie). Idempotente |
 | `/api/me` | GET | Estado de la conexión `{ connected, via, remember }`; `?full=1` suma los IDs y la página padre |
 | `/api/transactions` | GET / POST | Lista por año (`?year=`) / crea |

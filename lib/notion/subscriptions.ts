@@ -1,8 +1,39 @@
-import { getNotionClient, queryDatabase } from "./client";
+import { getNotionClient, queryDatabase, getDatabaseSchema, updateDatabaseSchema } from "./client";
 import type { NotionCreds } from "@/lib/auth/session";
 import { SubscriptionSchema, type Subscription, type Frequency, type SubscriptionStatus, type Currency } from "./schemas";
 import { getTitle, getSelect, getNumber, getRichText, getDate, getRelationId } from "./helpers";
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+
+// Properties the "recurrentes" feature needs on the Subscriptions DB, on top
+// of what the original template already ships (Name/Amount/Currency/
+// Frequency/CustomIntervalDays/StartDate/NextChargeDate/AlertDaysBefore/
+// Status/Notes/Account/Category).
+const REQUIRED_PROPS: Record<string, unknown> = {
+  Type: { select: { options: [{ name: "Gasto", color: "red" }, { name: "Ingreso", color: "green" }] } },
+  DueDay: { number: { format: "number" } },
+  LastChargedDate: { date: {} },
+  EndDate: { date: {} },
+};
+
+// Idempotent: only PATCHes properties that don't already exist on the
+// database. Safe to call repeatedly (e.g. re-run after adding a new field
+// here in the future) — never touches or removes existing properties.
+// Returns the names of the properties it added ([] if nothing was missing).
+export async function ensureSubscriptionsSchema(databaseId: string, token: string): Promise<string[]> {
+  const schema = await getDatabaseSchema(databaseId, token);
+  const existing = new Set(Object.keys(schema.properties));
+
+  const missing: Record<string, unknown> = {};
+  for (const [name, def] of Object.entries(REQUIRED_PROPS)) {
+    if (!existing.has(name)) missing[name] = def;
+  }
+
+  const added = Object.keys(missing);
+  if (added.length === 0) return [];
+
+  await updateDatabaseSchema(databaseId, missing, token);
+  return added;
+}
 
 function pageToSubscription(page: PageObjectResponse): Subscription {
   const p = page.properties;

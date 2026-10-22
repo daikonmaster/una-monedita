@@ -65,7 +65,7 @@ principal de Notion (publicada por `scripts/publish-notion-guide.ts`).
 - Código: `lib/auth/session.ts` (cookie, `resolveNotionCreds(cookieHeader, host)`, `getNotionCredsFromRequest`, `getConfigStatus`, `secretProblem`, `devAuthBypass`), `lib/auth/csrf.ts` (`csrfVerdict`, puro), `lib/auth/rate-limit.ts`.
 - Proxy (`proxy.ts` en raíz; Next.js 16 usa `proxy.ts`, NO `middleware.ts`, y se exporta como `proxy`). Orden: (1) `secretProblem()` → 503; (2) **CSRF de `/api/*` antes de todo lo demás**; (3) bypass de desarrollo; (4) públicas por igualdad exacta: `/setup` y `/api/setup`; (5) atajos de compatibilidad: `/login` redirige, `/api/auth` DELETE 200 / POST 410 (**TODO 2026-11-15: borrar**); (6) cookie válida → pasa; (7) migración de la cookie vieja `um_session` (reescribe el header Cookie del pedido y setea la nueva); (8) sin credenciales: páginas → `/setup?reason=missing|expired`, API → `401 { error:"Notion no conectado", code:"notion_disconnected" }`.
 - CSRF (necesario porque `/api/setup` es público y las cookies son `SameSite=Lax`): a `/api/*` no se llega navegando cross-site; las escrituras exigen `Sec-Fetch-Site: same-origin` y `Origin` = host (https en producción, `Origin: null` bloqueado); POST/PUT/PATCH exigen `Content-Type: application/json` (415). Todo `fetch` de escritura del cliente debe mandar ese header (también `body: "{}"` en POST sin cuerpo).
-- `/api/setup` POST: valida el token (`users/me`), busca las 6 bases hijas de la página, límite 10 intentos / 15 min por IP, setea la cookie. DELETE: la borra (idempotente). `/api/me` → `{ connected, via: "cookie"|"legacy"|"dev"|null, remember }`.
+- `/api/setup` POST: valida el token (`users/me`), busca las 6 bases hijas de la página, prepara Subscriptions (agrega Type/DueDay/LastChargedDate/EndDate si faltan, best-effort: un fallo solo se loguea y no bloquea), límite 10 intentos / 15 min por IP, setea la cookie. DELETE: la borra (idempotente). `/api/me` → `{ connected, via: "cookie"|"legacy"|"dev"|null, remember }`.
 - **Desarrollo local:** `devAuthBypass(host)` exige `NODE_ENV=development` + `DEV_AUTH_BYPASS=1` + host `localhost`/`127.0.0.1`/`[::1]`; entonces usa las credenciales de `.env.local`. Nunca definir `DEV_AUTH_BYPASS` ni `NOTION_*` en Vercel.
 - Cliente: cualquier 401 de la API (`HttpError.expired`) = sin conexión; `apiFetch` (store) avisa una vez y hace `location.replace("/setup?reason=expired")`, o `reason=revoked` si el cuerpo trae `code: "notion_token_invalid"` (Notion rechazó el token). La página del dashboard también redirige a `/setup?reason=revoked` en ese caso. Las rutas envuelven las llamadas a Notion con `withNotionErrors` / `notionErrorResponse` para que un token rechazado siempre sea 401.
 - `AUTH_COOKIE_SECRET` es la única variable obligatoria (≥ 32 caracteres, distinta del ejemplo). Si cambia, todos los dispositivos se desconectan. Fallos de Notion en la API → `502 {error, code, message}` vía `lib/notion/errors.ts` `notionErrorResponse()` (loguea `[op] failed:`; un `unauthorized` de Notion responde `401 notion_token_invalid`). Las credenciales se `.trim()`-ean.
@@ -143,10 +143,11 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 - `AutoCreate`, `AlertDaysBefore` y `Notes` siguen en Notion por compatibilidad
   pero la app ya no los lee/edita (`AlertDaysBefore` se escribe con su default 3
   al crear; `AutoCreate` ya no se escribe).
-- Antes de usar la feature en una base existente: Ajustes → Mantenimiento →
-  **Preparar Notion** (llama `POST /api/subscriptions/migrate`, agrega
-  `Type`/`DueDay`/`AutoCreate`/`LastChargedDate`/`EndDate` a la DB
-  Subscriptions si faltan; idempotente).
+- Props de la feature en la DB Subscriptions: `/api/setup` las agrega solo al
+  conectar Notion (`ensureSubscriptionsSchema` en `lib/notion/subscriptions.ts`:
+  `Type`/`DueDay`/`LastChargedDate`/`EndDate`, solo si faltan; idempotente). Para
+  conexiones viejas queda Ajustes → Mantenimiento → **Preparar Notion** (llama
+  `POST /api/subscriptions/migrate`, misma función).
 - La guía para agentes (Hermes) se publica/actualiza desde Ajustes →
   Mantenimiento → **Publicar guía para agentes** (`POST /api/notion/guide`,
   usa las creds de la conexión de este dispositivo; no requiere `NOTION_TOKEN`).
