@@ -263,3 +263,4 @@ máquina hay varias cuentas en `gh` y la activa suele ser otra
 6. `lib/notion/transactions.ts` exporta `getTransactions`, `createTransaction`, `updateTransaction`, `deleteTransaction` (todas con `creds` obligatorio)
 7. **Cada cambio de funcionalidad o estructura actualiza `README.md` (composición de la app y funcionalidades) en el mismo commit.**
 8. Toda escritura del cliente a `/api/*` manda `Content-Type: application/json` (el proxy responde 415 si no). No exponer escrituras por GET.
+9. **Forks:** cada cambio de `main` llega a los forks (Sync fork o `.github/workflows/sync-upstream.yml`). Una propiedad o base nueva de Notion se crea sola al conectar (patrón `ensureSubscriptionsSchema` en `/api/setup`) y se agrega a la plantilla; nada de variables de entorno obligatorias nuevas ni URLs/IDs/datos personales fijos en el código. Cambiar archivos de `.github/workflows/` obliga a los forks a sincronizar a mano (avisarlo en el PR).

@@ -113,6 +113,11 @@ Si desplegaste desde un fork, en GitHub abre tu fork y pulsa **Sync fork** →
 **Update branch**. Vercel despliega solo la versión nueva. Tus datos no se tocan
 (viven en tu Notion).
 
+Para que se actualice solo todos los días, activa una vez el workflow
+**Sincronizar con el original**: en tu fork, pestaña **Actions** → **I understand my
+workflows, go ahead and enable them** → elige el workflow → **Run workflow**. Detalles y
+casos en que hay que sincronizar a mano: README, sección "Recibir actualizaciones".
+
 Si no definiste `AUTH_COOKIE_SECRET`, la app conserva su clave automática entre
 deploys mientras Vercel mantenga la caché del build. Si un deploy te pide conectar
 otra vez, es eso: define la variable para evitarlo.
