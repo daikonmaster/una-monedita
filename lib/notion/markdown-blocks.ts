@@ -5,6 +5,8 @@
 // `code`, **bold**, and [text](url) inline spans), bullet lists, fenced code
 // blocks, and GFM tables. Not a general-purpose converter.
 
+import type { NotionCreds } from "../auth/session";
+
 const NOTION_VERSION = "2022-06-28";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,6 +165,38 @@ export function markdownToBlocks(md: string): Block[] {
     i += 1;
   }
   return blocks;
+}
+
+// ---- guide personalization ----
+
+// IDs de las 6 bases del Notion original que trae docs/NOTION-SCHEMA.md (tabla y
+// ejemplos JSON). Al publicar la guía se reemplazan por los de la conexión.
+export const GUIDE_EXAMPLE_DB_IDS: Record<keyof NotionCreds["dbIds"], string> = {
+  transactions: "36d5c48e-39b6-8172-ba4b-c2c59fa3fe6f",
+  accounts: "36d5c48e-39b6-812a-864a-df660a69585e",
+  categories: "36d5c48e-39b6-8193-b122-ce5da3528802",
+  subscriptions: "36d5c48e-39b6-81fd-b57c-c1d4033101e1",
+  budgets: "36d5c48e-39b6-81b5-be41-ed826914438b",
+  fxRates: "36d5c48e-39b6-8195-b489-d81b1bd2b9c8",
+};
+
+// 32 hex sin guiones -> UUID 8-4-4-4-12. Cualquier otro valor queda como vino (sin espacios).
+function toDashedUuid(id: string): string {
+  const t = id.trim();
+  const m = /^([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{12})$/i.exec(t);
+  return m ? m.slice(1).join("-") : t;
+}
+
+// Pura: devuelve la guía con los IDs de ejemplo cambiados por los de la conexión.
+// Un ID vacío de la conexión se deja como está (no se reemplaza ese).
+export function personalizeGuide(markdown: string, dbIds: NotionCreds["dbIds"]): string {
+  let out = markdown;
+  for (const key of Object.keys(GUIDE_EXAMPLE_DB_IDS) as Array<keyof NotionCreds["dbIds"]>) {
+    const target = toDashedUuid(dbIds[key] ?? "");
+    if (!target) continue;
+    out = out.replaceAll(GUIDE_EXAMPLE_DB_IDS[key], target);
+  }
+  return out;
 }
 
 // ---- publish helpers ----

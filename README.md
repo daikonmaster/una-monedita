@@ -45,6 +45,7 @@ Los dispositivos que estaban conectados con la versión anterior (con contraseñ
 Cada persona usa **su propia cuenta de Notion**: no hay datos compartidos entre usuarios.
 
 - **Recomendado:** cada persona hace su propio deploy desde el repo (ver `DEPLOY.md`). Así el servidor es suyo.
+- **Actualizaciones:** para recibirlas, hacé fork y usá **Sync fork** en GitHub (ver `DEPLOY.md`).
 - Una misma instalación puede servir a varias personas: cada navegador trae su cookie y ve solo su Notion. Pero el servidor usa tu token para leer tu Notion, así que conectá solo en una instalación tuya o de alguien de confianza.
 - Si se pierde un dispositivo: en notion.so/my-integrations regenerá el token de la integración y volvé a conectar. Desconectar solo borra la cookie de ese dispositivo; el token sigue siendo válido en Notion hasta que lo regeneres.
 
@@ -82,7 +83,7 @@ Lista de gastos e ingresos fijos (alquiler, suscripciones, sueldo). Cada fila di
 - **Tema:** automático, claro u oscuro. **Color:** Verde, Turquesa o **Grafito** (escala de grises; ingresos en verde, gastos en rojo y categorías conservan su color).
 - **Estilo del resumen** en el móvil.
 - **Notion:** estado, cambiar de cuenta, desconectar.
-- **Mantenimiento:** *Preparar Notion* (agrega a Subscriptions las propiedades que falten; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion).
+- **Mantenimiento:** *Preparar Notion* (agrega a Subscriptions las propiedades que falten; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion, con los IDs de tus bases en lugar de los de ejemplo).
 
 ---
 
@@ -191,12 +192,13 @@ Para probar desde el celular en la misma red, conectá por `/setup` (el bypass n
 Funciones puras sin dependencias de pruebas: se compilan con `tsc` a `node_modules/.cache/um-tests` y se corren con `node`.
 
 ```bash
-npx tsc scripts/test-recurrence.ts scripts/test-balance.ts scripts/test-date-range.ts scripts/test-session.ts scripts/test-csrf.ts --outDir node_modules/.cache/um-tests --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --strict
+npx tsc scripts/test-recurrence.ts scripts/test-balance.ts scripts/test-date-range.ts scripts/test-session.ts scripts/test-csrf.ts scripts/test-guide.ts --outDir node_modules/.cache/um-tests --module commonjs --moduleResolution node --target es2021 --esModuleInterop --skipLibCheck --strict
 node node_modules/.cache/um-tests/scripts/test-recurrence.js
 node node_modules/.cache/um-tests/scripts/test-balance.js
 node node_modules/.cache/um-tests/scripts/test-date-range.js
 node node_modules/.cache/um-tests/scripts/test-session.js
 node node_modules/.cache/um-tests/scripts/test-csrf.js
+node node_modules/.cache/um-tests/scripts/test-guide.js
 ```
 
 Además: `pnpm type-check`, `pnpm lint` y `pnpm build`.

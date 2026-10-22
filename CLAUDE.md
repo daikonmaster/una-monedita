@@ -104,7 +104,7 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 | `/api/budgets` | GET | Lista presupuestos del mes (`?year=YYYY&month=1-12`) |
 | `/api/budgets` | POST | Crea presupuesto (name, limit, currency, month, categoryId?) |
 | `/api/budgets/[id]` | PATCH | Edita límite / recurring / alertAt80 |
-| `/api/notion/guide` | POST | Publica `docs/NOTION-SCHEMA.md` como subpágina "📖 Guía del sistema" en Notion (creds de la conexión) |
+| `/api/notion/guide` | POST | Publica `docs/NOTION-SCHEMA.md` como subpágina "📖 Guía del sistema" en Notion (creds de la conexión); reemplaza los IDs de ejemplo por los de la conexión (`personalizeGuide` en `lib/notion/markdown-blocks.ts`) |
 | `/api/me` | GET | Estado de la conexión `{ connected, via, remember }`; `?full=1` además resuelve los 6 DB IDs + página padre |
 
 ## Gastos/ingresos fijos (recurrentes)

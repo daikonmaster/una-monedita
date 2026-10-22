@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getNotionCredsFromRequest } from "@/lib/auth/session";
 import { getDatabaseParentPageId } from "@/lib/notion/client";
-import { publishMarkdownPage } from "@/lib/notion/markdown-blocks";
+import { personalizeGuide, publishMarkdownPage } from "@/lib/notion/markdown-blocks";
 import { isNotionUnauthorized, notionErrorResponse } from "@/lib/notion/errors";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "No encontré docs/NOTION-SCHEMA.md en el servidor." }, { status: 500 });
   }
+
+  // La guía trae los IDs del Notion original: se cambian por los de esta conexión.
+  markdown = personalizeGuide(markdown, creds.dbIds);
 
   try {
     const result = await publishMarkdownPage(creds.token, parentId, PAGE_TITLE, "📖", markdown);

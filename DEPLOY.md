@@ -35,6 +35,8 @@ ingreso. Cada persona usa su propia cuenta de Notion.
 3. Se copiará "UNA MONEDITA" a tu cuenta, con 6 bases de datos dentro:
    Categories, Accounts, FX Rates, Subscriptions, Budgets, Transactions.
 
+> Si no ves el botón **Duplicar**, inicia sesión en Notion primero.
+
 ## 2. Crea una integración de Notion
 
 1. Ve a <https://www.notion.so/my-integrations> → **New integration**.
@@ -52,7 +54,9 @@ ingreso. Cada persona usa su propia cuenta de Notion.
 No hay ninguna variable de entorno obligatoria. Elige una de estas dos formas:
 
 - **Opción A, botón:** pulsa el botón **Deploy with Vercel** de arriba. Copia el
-  repositorio a tu GitHub y lo despliega en tu Vercel.
+  repositorio a tu GitHub y lo despliega en tu Vercel. Es una copia independiente:
+  no queda conectada al repositorio original. Si quieres recibir las
+  actualizaciones, conviene la Opción B.
 - **Opción B, fork:** haz un fork del repositorio en GitHub, entra a
   <https://vercel.com> → **New Project** → importa tu fork y pulsa **Deploy**.
 
@@ -102,6 +106,27 @@ Empieza a registrar gastos e ingresos. La moneda por defecto es **Euro**; puedes
 cambiarla en **Ajustes → Moneda**. Para que el **Disponible hoy** sea tu plata real,
 ve a **Ajustes → Saldo → ¿Cuánta plata tenés hoy?** y escribe lo que tienes (efectivo
 más banco).
+
+## Mantener tu copia al día
+
+Si desplegaste desde un fork, en GitHub abre tu fork y pulsa **Sync fork** →
+**Update branch**. Vercel despliega solo la versión nueva. Tus datos no se tocan
+(viven en tu Notion).
+
+Si no definiste `AUTH_COOKIE_SECRET`, la app conserva su clave automática entre
+deploys mientras Vercel mantenga la caché del build. Si un deploy te pide conectar
+otra vez, es eso: define la variable para evitarlo.
+
+## Usar tu propio dominio
+
+La app funciona en la dirección `.vercel.app` que te da Vercel y en cualquier dominio
+propio, sin cambiar nada del código (no hay URLs fijas). Para agregarlo: en Vercel,
+tu proyecto → **Settings → Domains** → agrega el dominio y sigue las instrucciones de
+DNS.
+
+La conexión a Notion se guarda por dominio: la primera vez que entres por el dominio
+nuevo tienes que conectar de nuevo (y si instalaste la app en el celular, instálala
+otra vez desde el dominio nuevo).
 
 ---
 
