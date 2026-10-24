@@ -64,7 +64,7 @@ function MobileLayout() {
   const activeTab: Screen = screen === "categorias" ? "ajustes" : screen;
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(10px + env(safe-area-inset-top)) 16px 4px", minHeight: 56, flex: "0 0 auto" }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(10px, calc(env(safe-area-inset-top) - 8px)) 16px 4px", minHeight: 56, flex: "0 0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
           {screen === "categorias" && (
             <button className="icon-btn" onClick={() => setScreen("ajustes")} aria-label="Volver a Ajustes" style={{ marginLeft: -10 }}>
@@ -82,7 +82,7 @@ function MobileLayout() {
       <main style={{ flex: 1, minHeight: 0 }}>
         <ScreenBody screen={screen} />
       </main>
-      <nav aria-label="Secciones" style={{ display: "flex", borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto", paddingBottom: "calc(4px + env(safe-area-inset-bottom))" }}>
+      <nav aria-label="Secciones" className="mobile-nav" style={{ display: "flex", borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto", paddingBottom: "calc(4px + env(safe-area-inset-bottom))" }}>
         {NAV_MOBILE.map((n) => {
           const on = activeTab === n.id;
           return (
@@ -90,7 +90,7 @@ function MobileLayout() {
               key={n.id}
               onClick={() => setScreen(n.id)}
               aria-current={on ? "page" : undefined}
-              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 0 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
+              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 0 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
             >
               <span
                 style={{ width: 56, height: 30, borderRadius: 15, display: "grid", placeItems: "center", background: on ? "var(--accent-soft)" : "transparent", transition: "background .15s" }}

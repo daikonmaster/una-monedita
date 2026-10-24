@@ -198,6 +198,20 @@ body {
   letter-spacing: 0;
 }
 
+/* iOS Safari: la barra de URL flotante deja dibujar el contenido detrás.
+   El shell móvil mide 100lvh y la nav rellena la diferencia con 100dvh,
+   así su fondo llega al borde y las etiquetas quedan justo sobre la píldora
+   (el -12px solapa la franja vacía encima de ella). En standalone y otros
+   navegadores lvh = dvh y solo queda el inset inferior. */
+@supports (-webkit-touch-callout: none) {
+  .app-root.mobile {
+    height: 100lvh !important;
+  }
+  .mobile-nav {
+    padding-bottom: max(4px, calc(100lvh - 100dvh - 12px + env(safe-area-inset-bottom))) !important;
+  }
+}
+
 /* iOS Safari hace zoom automático al enfocar inputs con fuente < 16px.
    Red de contención — los estilos inline ya corregidos siguen ganando. */
 .app-root input,
