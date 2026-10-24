@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSubscriptionById } from "@/lib/notion/subscriptions";
+import { PaymentMethodSchema } from "@/lib/notion/schemas";
 import { chargeSubscription } from "@/lib/notion/payments";
 import { getNotionCredsFromRequest } from "@/lib/auth/session";
 import { checkMutationLimit } from "@/lib/auth/rate-limit";
@@ -16,6 +17,7 @@ const BodySchema = z.object({
   amount: z.number().positive().optional(),
   categoryId: z.string().optional(),
   notes: z.string().max(500).optional(),
+  paymentMethod: PaymentMethodSchema.optional(),
 });
 
 // Botón "Confirmar" de un fijo: registra una Transaction con la fecha que

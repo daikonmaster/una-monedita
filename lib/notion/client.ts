@@ -99,6 +99,30 @@ export async function getDatabaseSchema(
   return res.json();
 }
 
+// Idempotent: only PATCHes the properties of `required` that don't already
+// exist on the database. Safe to call repeatedly: never touches or removes
+// existing properties. Returns the names of the properties it added ([] if
+// nothing was missing).
+export async function ensureDatabaseProps(
+  databaseId: string,
+  required: Record<string, unknown>,
+  token: string
+): Promise<string[]> {
+  const schema = await getDatabaseSchema(databaseId, token);
+  const existing = new Set(Object.keys(schema.properties));
+
+  const missing: Record<string, unknown> = {};
+  for (const [name, def] of Object.entries(required)) {
+    if (!existing.has(name)) missing[name] = def;
+  }
+
+  const added = Object.keys(missing);
+  if (added.length === 0) return [];
+
+  await updateDatabaseSchema(databaseId, missing, token);
+  return added;
+}
+
 // Resolve the parent page a database lives under — used to find where to
 // publish/refresh the "Guía del sistema (para agentes)" child page relative
 // to a user's own "Una Monedita" main page, without hardcoding its ID.

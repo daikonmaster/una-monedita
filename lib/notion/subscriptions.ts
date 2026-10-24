@@ -1,4 +1,4 @@
-import { getNotionClient, queryDatabase, getDatabaseSchema, updateDatabaseSchema } from "./client";
+import { getNotionClient, queryDatabase, ensureDatabaseProps } from "./client";
 import type { NotionCreds } from "@/lib/auth/session";
 import { SubscriptionSchema, type Subscription, type Frequency, type SubscriptionStatus, type Currency } from "./schemas";
 import { getTitle, getSelect, getNumber, getRichText, getDate, getRelationId } from "./helpers";
@@ -20,19 +20,7 @@ const REQUIRED_PROPS: Record<string, unknown> = {
 // here in the future) — never touches or removes existing properties.
 // Returns the names of the properties it added ([] if nothing was missing).
 export async function ensureSubscriptionsSchema(databaseId: string, token: string): Promise<string[]> {
-  const schema = await getDatabaseSchema(databaseId, token);
-  const existing = new Set(Object.keys(schema.properties));
-
-  const missing: Record<string, unknown> = {};
-  for (const [name, def] of Object.entries(REQUIRED_PROPS)) {
-    if (!existing.has(name)) missing[name] = def;
-  }
-
-  const added = Object.keys(missing);
-  if (added.length === 0) return [];
-
-  await updateDatabaseSchema(databaseId, missing, token);
-  return added;
+  return ensureDatabaseProps(databaseId, REQUIRED_PROPS, token);
 }
 
 function pageToSubscription(page: PageObjectResponse): Subscription {

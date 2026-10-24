@@ -1,11 +1,12 @@
 "use client";
 
-import { useContext, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useContext, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useStore, type Period } from "./store";
 import { Icon } from "./Icon";
 import { RangeModal } from "./modal-range";
 import { DonutInner } from "./Donut";
 import { fmt, fmtShort, fitFontSize } from "@/lib/format";
+import type { BudgetLevel } from "@/lib/budget";
 
 export const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 export const MONTHS_FULL = [
@@ -67,6 +68,9 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(o.value)}
             style={{
               flex: stretch ? 1 : undefined,
+              // con 4 opciones (medio de pago) en un celular angosto el texto no entra
+              // en el ancho de su contenido: que las opciones se repartan parejo
+              minWidth: stretch ? 0 : undefined,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -201,6 +205,42 @@ export function CenterBalance({ scale = 1 }: { scale?: number }) {
         {caption}
       </div>
     </div>
+  );
+}
+
+// Colores del estado de un presupuesto (ver lib/budget.ts). El texto usa los
+// tokens AA (`--income`/`--expense`); las barras, los de relleno.
+export const BUDGET_TEXT: Record<BudgetLevel, string> = {
+  ok: "var(--income)",
+  near: "var(--warn)",
+  over: "var(--expense)",
+};
+export const BUDGET_FILL: Record<BudgetLevel, string> = {
+  ok: "var(--income-fill)",
+  near: "var(--warn)",
+  over: "var(--expense-fill)",
+};
+
+// Barra de avance contra el límite. `ratio` ya viene recortado a 0..1.
+export function BudgetBar({ ratio, level, height = 5, style }: { ratio: number; level: BudgetLevel; height?: number; style?: CSSProperties }) {
+  return (
+    <div aria-hidden="true" style={{ height, borderRadius: 999, background: "var(--bg-2)", overflow: "hidden", ...style }}>
+      <div style={{ width: ratio * 100 + "%", height: "100%", borderRadius: 999, background: BUDGET_FILL[level] }} />
+    </div>
+  );
+}
+
+// "€ 6,20 de € 30,00": lo gastado queda neutro y SOLO el límite lleva el color
+// del estado, así a simple vista se distingue cuál es el tope y cuál lo gastado.
+export function BudgetAmount({ spent, limit, level, sep = "de", short = false }: { spent: number; limit: number; level: BudgetLevel; sep?: "de" | "/"; short?: boolean }) {
+  const { currency } = useStore();
+  const f = short ? fmtShort : fmt;
+  return (
+    <span className="num tnum" style={{ whiteSpace: "nowrap" }}>
+      <span style={{ color: "var(--text)" }}>{f(spent, currency)}</span>
+      <span style={{ color: "var(--text-3)" }}>{sep === "de" ? " de " : " / "}</span>
+      <span style={{ color: BUDGET_TEXT[level] }}>{f(limit, currency)}</span>
+    </span>
   );
 }
 

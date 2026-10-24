@@ -10,7 +10,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { Category, Transaction, Subscription, Budget, Frequency, SubscriptionStatus, Currency } from "@/lib/notion/schemas";
+import type { Category, Transaction, Subscription, Budget, Frequency, SubscriptionStatus, Currency, PaymentMethod } from "@/lib/notion/schemas";
 import {
   type Period,
   type DateRange,
@@ -64,6 +64,8 @@ export interface UITx {
   transfer: boolean;
   // Moneda del movimiento. La app no convierte: el saldo suma todo sin conversión.
   currency: string;
+  // Cómo se pagó (solo gastos, opcional): Efectivo / Bizum / Débito / Crédito.
+  pay: PaymentMethod | null;
 }
 
 // Recurrentes (gastos/ingresos fijos). Dates stay as YYYY-MM-DD strings —
@@ -181,10 +183,10 @@ interface StoreValue {
   openConfirmSub: (sub: UISub) => void;
   closeEntry: () => void;
   mode?: "mobile" | "desktop";
-  addTransaction: (tx: { cat: string; amount: number; date: Date; note: string }) => Promise<void>;
+  addTransaction: (tx: { cat: string; amount: number; date: Date; note: string; pay?: PaymentMethod | null }) => Promise<void>;
   updateTransaction: (
     id: string,
-    patch: { cat?: string; amount?: number; date?: Date; note?: string }
+    patch: { cat?: string; amount?: number; date?: Date; note?: string; pay?: PaymentMethod | null }
   ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   addCategory: (cat: { name: string; type: TxType; icon: string; color: string }) => Promise<string>;
@@ -202,7 +204,7 @@ interface StoreValue {
   subPayments: (subId: string) => UITx[];
   confirmSubscription: (
     sub: UISub,
-    input: { date: Date; amount: number; cat: string | null; note: string }
+    input: { date: Date; amount: number; cat: string | null; note: string; pay?: PaymentMethod | null }
   ) => Promise<void>;
   budgets: UIBudget[];
   setBudget: (categoryId: string, limit: number) => Promise<void>;
@@ -284,6 +286,7 @@ function txToUI(t: Transaction, byId: Record<string, UICategory>): UITx {
     sub: t.subscriptionId,
     transfer: t.type === "Transferencia",
     currency: t.currency ?? "ARS",
+    pay: t.paymentMethod,
   };
 }
 
@@ -1036,7 +1039,7 @@ export function StoreProvider({
   // mutaciones optimistas: aplican el cambio local al instante y sincronizan
   // con Notion en background; si falla, revierten y muestran toast.
   const addTransaction = useCallback<StoreValue["addTransaction"]>(
-    async ({ cat, amount, date, note }) => {
+    async ({ cat, amount, date, note, pay }) => {
       const category = byId[cat];
       const kind = category?.type === "income" ? "Ingreso" : "Gasto";
       const tempId = "tmp-" + newTempId();
@@ -1050,6 +1053,7 @@ export function StoreProvider({
         sub: null,
         transfer: false,
         currency,
+        pay: pay ?? null,
       });
       void apiFetch("/api/transactions", {
         method: "POST",
@@ -1061,6 +1065,7 @@ export function StoreProvider({
           date: toISO(date),
           categoryId: cat,
           notes: note || undefined,
+          paymentMethod: pay || undefined,
         }),
       })
         .then(async (res) => {
@@ -1090,6 +1095,7 @@ export function StoreProvider({
         date: patch.date ?? prev.date,
         note: patch.note !== undefined ? patch.note : prev.note,
         type: patch.cat ? byId[patch.cat]?.type ?? prev.type : prev.type,
+        pay: patch.pay !== undefined ? patch.pay : prev.pay,
       };
       // remove from all years then re-insert (date may have changed years)
       removeTx(id);
@@ -1099,6 +1105,7 @@ export function StoreProvider({
       if (patch.amount != null) body.amount = patch.amount;
       if (patch.note !== undefined) body.notes = patch.note;
       if (patch.date) body.date = toISO(patch.date);
+      if (patch.pay !== undefined) body.paymentMethod = patch.pay;
       if (patch.cat) {
         body.categoryId = patch.cat;
         body.type = byId[patch.cat]?.type === "income" ? "Ingreso" : "Gasto";
@@ -1288,6 +1295,7 @@ export function StoreProvider({
         sub: prev.id,
         transfer: false,
         currency: prev.currency,
+        pay: input.pay ?? null,
       });
       setSubscriptions((list) => list.map((s) => (s.id === prev.id ? optimisticSub : s)));
 
@@ -1301,6 +1309,7 @@ export function StoreProvider({
             amount: input.amount,
             categoryId: input.cat ?? undefined,
             notes: input.note || undefined,
+            paymentMethod: input.pay || undefined,
           }),
         });
         const body = await res.json().catch(() => null);

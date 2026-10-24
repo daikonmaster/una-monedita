@@ -1,11 +1,48 @@
-import { getNotionClient, queryDatabase } from "./client";
+import { getNotionClient, queryDatabase, ensureDatabaseProps } from "./client";
 import type { NotionCreds } from "@/lib/auth/session";
-import { TransactionSchema, type Transaction, type TransactionType, type Currency } from "./schemas";
+import { TransactionSchema, PAYMENT_METHODS, type Transaction, type TransactionType, type Currency, type PaymentMethod } from "./schemas";
 import { getTitle, getSelect, getNumber, getRichText, getDate, getCreatedTime, getRelationId } from "./helpers";
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
+// Propiedades que la feature "medio de pago" necesita en la DB Transactions,
+// además de las que ya trae la plantilla.
+const REQUIRED_PROPS: Record<string, unknown> = {
+  PaymentMethod: {
+    select: {
+      options: [
+        { name: "Efectivo", color: "green" },
+        { name: "Bizum", color: "blue" },
+        { name: "Débito", color: "purple" },
+        { name: "Crédito", color: "orange" },
+      ],
+    },
+  },
+};
+
+// Idempotente (ver ensureDatabaseProps): agrega solo las propiedades que falten.
+// Devuelve los nombres que agregó ([] si no faltaba nada).
+export async function ensureTransactionsSchema(databaseId: string, token: string): Promise<string[]> {
+  return ensureDatabaseProps(databaseId, REQUIRED_PROPS, token);
+}
+
+// Las conexiones existentes nunca vuelven a pasar por /api/setup, y escribir un
+// select en una propiedad que no existe falla: antes de guardar un medio de pago
+// se asegura la propiedad, una sola vez por base y por instancia del servidor.
+// Se anota recién después de lograrlo, así un fallo se reintenta en el próximo pedido.
+const ensuredPaymentDbs = new Set<string>();
+
+async function ensurePaymentProp(creds: NotionCreds): Promise<void> {
+  const id = creds.dbIds.transactions;
+  if (ensuredPaymentDbs.has(id)) return;
+  await ensureTransactionsSchema(id, creds.token);
+  ensuredPaymentDbs.add(id);
+}
+
 function pageToTransaction(page: PageObjectResponse): Transaction {
   const p = page.properties;
+  // En bases viejas la propiedad no existe (getSelect reventaría con undefined);
+  // y una opción agregada a mano en Notion no debe romper el parse de todo el año.
+  const pm = p["PaymentMethod"] ? getSelect(p["PaymentMethod"]) : null;
   return TransactionSchema.parse({
     id: page.id,
     name: getTitle(p["Name"]),
@@ -20,6 +57,7 @@ function pageToTransaction(page: PageObjectResponse): Transaction {
     accountToId: getRelationId(p["AccountTo"]),
     categoryId: getRelationId(p["Category"]),
     subscriptionId: getRelationId(p["Subscription"]),
+    paymentMethod: (PAYMENT_METHODS as readonly string[]).includes(pm ?? "") ? pm : null,
     createdAt: getCreatedTime(p["CreatedAt"]),
   });
 }
@@ -131,9 +169,11 @@ export async function createTransaction(data: {
   categoryId?: string;
   subscriptionId?: string;
   notes?: string;
+  paymentMethod?: PaymentMethod;
 }, creds: NotionCreds): Promise<Transaction> {
   const notion = getNotionClient(creds.token);
   const label = `${data.type} · ${data.amount} ${data.currency}`;
+  if (data.paymentMethod) await ensurePaymentProp(creds);
 
   const page = await notion.pages.create({
     parent: { database_id: creds.dbIds.transactions },
@@ -150,6 +190,7 @@ export async function createTransaction(data: {
       ...(data.categoryId ? { Category: { relation: [{ id: data.categoryId }] } } : {}),
       ...(data.subscriptionId ? { Subscription: { relation: [{ id: data.subscriptionId }] } } : {}),
       ...(data.notes ? { Notes: { rich_text: [{ text: { content: data.notes } }] } } : {}),
+      ...(data.paymentMethod ? { PaymentMethod: { select: { name: data.paymentMethod } } } : {}),
     },
   });
 
@@ -168,10 +209,13 @@ export async function updateTransaction(
     accountId: string;
     categoryId: string;
     notes: string;
+    // null limpia el medio de pago
+    paymentMethod: PaymentMethod | null;
   }>,
   creds: NotionCreds
 ): Promise<Transaction> {
   const notion = getNotionClient(creds.token);
+  if (data.paymentMethod !== undefined) await ensurePaymentProp(creds);
   const page = await notion.pages.update({
     page_id: id,
     properties: {
@@ -184,6 +228,9 @@ export async function updateTransaction(
       ...(data.accountId ? { Account: { relation: [{ id: data.accountId }] } } : {}),
       ...(data.categoryId ? { Category: { relation: [{ id: data.categoryId }] } } : {}),
       ...(data.notes !== undefined ? { Notes: { rich_text: data.notes ? [{ text: { content: data.notes } }] : [] } } : {}),
+      ...(data.paymentMethod !== undefined
+        ? { PaymentMethod: { select: data.paymentMethod ? { name: data.paymentMethod } : null } }
+        : {}),
     },
   });
   return pageToTransaction(page as PageObjectResponse);

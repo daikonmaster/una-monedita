@@ -6,7 +6,7 @@ import type { NotionCreds } from "@/lib/auth/session";
 import { createTransaction, deleteTransaction } from "./transactions";
 import { updateSubscription } from "./subscriptions";
 import { addInterval } from "@/lib/recurrence";
-import type { Subscription, Transaction } from "./schemas";
+import type { Subscription, Transaction, PaymentMethod } from "./schemas";
 
 export interface ChargeResult {
   subscription: Subscription;
@@ -21,7 +21,7 @@ export interface ChargeResult {
 // EndDate has passed.
 export async function chargeSubscription(
   sub: Subscription,
-  opts: { date: string; amount?: number; categoryId?: string; notes?: string },
+  opts: { date: string; amount?: number; categoryId?: string; notes?: string; paymentMethod?: PaymentMethod },
   creds: NotionCreds
 ): Promise<ChargeResult> {
   const covered = (sub.nextChargeDate ?? opts.date).slice(0, 10);
@@ -38,6 +38,7 @@ export async function chargeSubscription(
       categoryId: opts.categoryId ?? sub.categoryId ?? undefined,
       subscriptionId: sub.id,
       notes: opts.notes ?? sub.name,
+      paymentMethod: opts.paymentMethod,
     },
     creds
   );
