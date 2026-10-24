@@ -30,7 +30,7 @@ Reemplaza al viejo minimalist-ui. Definido en `app/globals.css` con CSS vars por
 - Categorías guardan `Icon` (nombre Lucide PascalCase) + `Color` (hex) en Notion.
 - Tienda de Iconos: catálogo en `lib/icon-catalog.ts` (`GROUPS`, `COLORS`, `ALL`).
 - **Grafito:** tema en escala de grises (`[data-theme="light"|"dark"][data-accent="grafito"]` en `globals.css`, especificidad 0,2,0). Reemplaza fondos, texto y acento por grises neutros; `--income*`, `--expense*`, `--warn` y `--cat-*` no se tocan. El acento viejo "bosque" ya no existe: `normalizeAccent` (store) y el script de `layout.tsx` lo migran a "verde".
-- Preferencias (theme/dashStyle/accent/currency/focus/period) persisten en localStorage (`um.theme/um.dash/um.accent/um.currency/um.focus/um.period`). `um.carry` ya no existe (el saldo siempre es acumulado; el store lo borra).
+- Preferencias (theme/dashStyle/accent/currency/focus/period) persisten en localStorage (`um.theme/um.dash/um.accent/um.currency/um.focus/um.period`). `um.pay` guarda el último medio de pago usado en el modal de gasto (lo lee `modal-new-entry.tsx`, no el store). `um.carry` ya no existe (el saldo siempre es acumulado; el store lo borra).
 
 ## Notion — IDs y caveats críticos
 
@@ -65,7 +65,7 @@ principal de Notion (publicada por `scripts/publish-notion-guide.ts`).
 - Código: `lib/auth/session.ts` (cookie, `resolveNotionCreds(cookieHeader, host)`, `getNotionCredsFromRequest`, `getConfigStatus`, `secretProblem`, `usingBuildSecret`, `devAuthBypass`), `lib/auth/csrf.ts` (`csrfVerdict`, puro), `lib/auth/rate-limit.ts`.
 - Proxy (`proxy.ts` en raíz; Next.js 16 usa `proxy.ts`, NO `middleware.ts`, y se exporta como `proxy`). Orden: (1) `secretProblem()` → 503; (2) **CSRF de `/api/*` antes de todo lo demás**; (3) bypass de desarrollo; (4) públicas por igualdad exacta: `/setup` y `/api/setup`; (5) atajos de compatibilidad: `/login` redirige, `/api/auth` DELETE 200 / POST 410 (**TODO 2026-11-15: borrar**); (6) cookie válida → pasa; (7) migración de la cookie vieja `um_session` (reescribe el header Cookie del pedido y setea la nueva); (8) sin credenciales: páginas → `/setup?reason=missing|expired`, API → `401 { error:"Notion no conectado", code:"notion_disconnected" }`.
 - CSRF (necesario porque `/api/setup` es público y las cookies son `SameSite=Lax`): a `/api/*` no se llega navegando cross-site; las escrituras exigen `Sec-Fetch-Site: same-origin` y `Origin` = host (https en producción, `Origin: null` bloqueado); POST/PUT/PATCH exigen `Content-Type: application/json` (415). Todo `fetch` de escritura del cliente debe mandar ese header (también `body: "{}"` en POST sin cuerpo).
-- `/api/setup` POST: valida el token (`users/me`), busca las 6 bases hijas de la página, prepara Subscriptions (agrega Type/DueDay/LastChargedDate/EndDate si faltan, best-effort: un fallo solo se loguea y no bloquea), límite 10 intentos / 15 min por IP, setea la cookie. DELETE: la borra (idempotente). `/api/me` → `{ connected, via: "cookie"|"legacy"|"dev"|null, remember }`.
+- `/api/setup` POST: valida el token (`users/me`), busca las 6 bases hijas de la página, prepara Subscriptions (agrega Type/DueDay/LastChargedDate/EndDate si faltan) y Transactions (`PaymentMethod`, `ensureTransactionsSchema`), ambos best-effort: un fallo solo se loguea y no bloquea, límite 10 intentos / 15 min por IP, setea la cookie. DELETE: la borra (idempotente). `/api/me` → `{ connected, via: "cookie"|"legacy"|"dev"|null, remember }`.
 - **Desarrollo local:** `devAuthBypass(host)` exige `NODE_ENV=development` + `DEV_AUTH_BYPASS=1` + host `localhost`/`127.0.0.1`/`[::1]`; entonces usa las credenciales de `.env.local`. Nunca definir `DEV_AUTH_BYPASS` ni `NOTION_*` en Vercel.
 - Cliente: cualquier 401 de la API (`HttpError.expired`) = sin conexión; `apiFetch` (store) avisa una vez y hace `location.replace("/setup?reason=expired")`, o `reason=revoked` si el cuerpo trae `code: "notion_token_invalid"` (Notion rechazó el token). La página del dashboard también redirige a `/setup?reason=revoked` en ese caso. Las rutas envuelven las llamadas a Notion con `withNotionErrors` / `notionErrorResponse` para que un token rechazado siempre sea 401.
 - `AUTH_COOKIE_SECRET` es la única variable recomendada (≥ 32 caracteres, distinta del ejemplo; si está definida y no sirve → 503). Si cambia, todos los dispositivos se desconectan. **Respaldo:** si no está definida, `next.config.ts` (`buildSecret()`) genera un secreto aleatorio al compilar en `.next/cache/um-auth-secret` (creación atómica con `linkSync`, porque Next evalúa la config en varios procesos) y lo expone como `UM_BUILD_SECRET`, que Next inlinea en el código del servidor (`process.env.UM_BUILD_SECRET` va literal). `secretProblem()` lo acepta y `usingBuildSecret()` lo detecta (`/setup` muestra un aviso). Así un fork desplegado sin configurar nada funciona; si se pierde la caché del build, la clave cambia y hay que reconectar. Fallos de Notion en la API → `502 {error, code, message}` vía `lib/notion/errors.ts` `notionErrorResponse()` (loguea `[op] failed:`; un `unauthorized` de Notion responde `401 notion_token_invalid`). Las credenciales se `.trim()`-ean.
@@ -90,8 +90,8 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 | `/api/setup` | POST/DELETE | Conecta Notion (cookie cifrada; `remember`) / desconecta este dispositivo. Pública, con CSRF y límite de intentos |
 | `/api/seed` | POST | Seedea set diseño si vacío; `?reset=1` archiva todo + reseedea (POST + JSON: no se dispara con un link) |
 | `/api/transactions` | GET | Lista por año (`?year=YYYY`, paginado) |
-| `/api/transactions` | POST | Crea transacción |
-| `/api/transactions/[id]` | PATCH/DELETE | Edita / borra (`in_trash`) |
+| `/api/transactions` | POST | Crea transacción (`paymentMethod` opcional, solo gastos) |
+| `/api/transactions/[id]` | PATCH/DELETE | Edita (`paymentMethod: null` lo borra) / borra (`in_trash`) |
 | `/api/transactions/history` | GET | `?before=YYYY-MM-DD`: todos los movimientos anteriores (exclusivo), paginado en serie. Alimenta el saldo arrastrado |
 | `/api/accounts/opening` | GET/PUT | Saldo inicial = `Accounts.InitialBalance` de la cuenta "Principal" (o la primera no archivada; PUT la crea si no existe) |
 | `/api/categories` | GET | Lista (`?kind=Gasto\|Ingreso`) |
@@ -100,7 +100,7 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 | `/api/subscriptions` | GET/POST | Lista recurrentes (`?status=`) / crea |
 | `/api/subscriptions/[id]` | PATCH/DELETE | Edita / borra (`in_trash`) |
 | `/api/subscriptions/[id]/pay` | POST | Registrar pago: crea Transaction con la fecha elegida por el usuario (default hoy) y avanza `NextChargeDate` un período; `409` si `expectedNext` no coincide (ya se había registrado) |
-| `/api/subscriptions/migrate` | POST | Agrega a la DB Subscriptions las props que falten (idempotente) |
+| `/api/subscriptions/migrate` | POST | "Preparar Notion": agrega las props que falten a Subscriptions y a Transactions (`PaymentMethod`) (idempotente) |
 | `/api/budgets` | GET | Lista presupuestos del mes (`?year=YYYY&month=1-12`) |
 | `/api/budgets` | POST | Crea presupuesto (name, limit, currency, month, categoryId?) |
 | `/api/budgets/[id]` | PATCH | Edita límite / recurring / alertAt80 |
@@ -147,7 +147,8 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
   conectar Notion (`ensureSubscriptionsSchema` en `lib/notion/subscriptions.ts`:
   `Type`/`DueDay`/`LastChargedDate`/`EndDate`, solo si faltan; idempotente). Para
   conexiones viejas queda Ajustes → Mantenimiento → **Preparar Notion** (llama
-  `POST /api/subscriptions/migrate`, misma función).
+  `POST /api/subscriptions/migrate`, misma función, y además agrega
+  `PaymentMethod` a Transactions con `ensureTransactionsSchema`).
 - La guía para agentes (Hermes) se publica/actualiza desde Ajustes →
   Mantenimiento → **Publicar guía para agentes** (`POST /api/notion/guide`,
   usa las creds de la conexión de este dispositivo; no requiere `NOTION_TOKEN`).
@@ -192,10 +193,34 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 - Se editan desde Categorías (campo "Presupuesto mensual" al editar una
   categoría de Gasto) → `store.setBudget(categoryId, limit)` hace upsert
   (PATCH si ya existe uno para el mes del `anchor`, POST si no).
-- En el Resumen, `LegendList` solo cruza gasto real vs límite cuando el rango
-  visible es un mes completo (`isFullMonthRange`); en Día/Semana/Año/rangos
-  parciales vuelve a mostrar el % relativo normal. Ámbar al 80% (si
-  `AlertAt80`), rojo al superar el límite.
+- En el Resumen, `LegendList` (y las tarjetas del estilo C) solo cruzan gasto
+  real vs límite cuando el rango visible es un mes completo
+  (`isFullMonthRange`, en `lib/date-range.ts`); en Día/Semana/Año/rangos
+  parciales vuelve a mostrar el % relativo normal.
+- Estado y color: `lib/budget.ts` `budgetState(spent, limit, alertAt80)` →
+  `{ ratio, level }`. Verde (`--income`) por debajo del 80%, ámbar (`--warn`) del
+  80% al límite inclusive (solo si `AlertAt80`), rojo (`--expense`) al superar el
+  límite. **Solo el valor del límite lleva el color**; el gasto queda neutro
+  (`--text`) y el "de" / "/" en `--text-3`. Componentes en `ui.tsx`:
+  `BudgetAmount` ("€ 6 de € 30", `short` para las tarjetas), `BudgetBar` y los
+  mapas `BUDGET_TEXT` / `BUDGET_FILL`. No colorear a mano: usar siempre estos.
+- Movimientos (`screen-movimientos.tsx`): con el mismo criterio de mes completo
+  (y filtro de tipo distinto de Ingresos), cada categoría de gasto con
+  presupuesto muestra siempre su `BudgetBlock` (abierta o cerrada), incluidas las
+  que no tuvieron gastos en el mes (tarjeta "Sin movimientos", sin desplegar). Con
+  una sola categoría filtrada (lista plana) el bloque va en una tarjeta arriba.
+
+## Medio de pago
+
+- Propiedad select `PaymentMethod` en Transactions (Efectivo / Bizum / Débito /
+  Crédito, `PAYMENT_METHODS` en `lib/notion/schemas.ts`), **opcional y solo en
+  gastos**. `UITx.pay` en el cliente. El modal de gasto (`modal-new-entry.tsx`)
+  la elige con `SegmentedControl` y preselecciona la última usada (`um.pay`).
+- `lib/notion/transactions.ts` asegura la propiedad antes de escribirla
+  (`ensurePaymentProp`, una vez por base y por instancia del servidor): las
+  conexiones existentes no vuelven a pasar por `/api/setup` y escribir un select
+  en una propiedad que no existe falla. `pageToTransaction` tolera bases sin la
+  propiedad y opciones desconocidas (→ `null`).
 
 ## Categorías (set Monefy actual)
 

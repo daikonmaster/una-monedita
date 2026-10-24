@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/session";
 import { checkRateLimit, clientIp } from "@/lib/auth/rate-limit";
 import { ensureSubscriptionsSchema } from "@/lib/notion/subscriptions";
+import { ensureTransactionsSchema } from "@/lib/notion/transactions";
 
 export const dynamic = "force-dynamic";
 
@@ -143,12 +144,19 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. Preparar Subscriptions: agrega las propiedades que falten (Type, DueDay, etc.).
-  // Best-effort: si falla no bloquea la conexión ("Preparar Notion" queda de respaldo).
+  // 4. Preparar Subscriptions (Type, DueDay, etc.) y Transactions (PaymentMethod):
+  // agrega las propiedades que falten. Best-effort: si falla no bloquea la
+  // conexión ("Preparar Notion" queda de respaldo; PaymentMethod además se
+  // asegura solo antes de guardar un medio de pago).
   try {
     await ensureSubscriptionsSchema(found.subscriptions!, notionToken);
   } catch (err) {
     console.warn("[setup] subscriptions schema:", err);
+  }
+  try {
+    await ensureTransactionsSchema(found.transactions!, notionToken);
+  } catch (err) {
+    console.warn("[setup] transactions schema:", err);
   }
 
   // 5. Cookie cifrada con las credenciales descubiertas (única credencial de la app).

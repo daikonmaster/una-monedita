@@ -58,7 +58,7 @@ SPA estilo Monefy con navegación interna (sin cambio de ruta). Móvil: barra in
 | Pantalla | Qué hace |
 |----------|----------|
 | **Resumen** | **Disponible hoy**, tira Ingresos / Gastos / Balance del período, donut por categoría, leyenda con presupuestos, comparativa y promedio |
-| **Movimientos** | Lista agrupada por día, edición y borrado, filtro por tipo y categorías |
+| **Movimientos** | Lista agrupada por categoría, edición y borrado, filtro por tipo y categorías, y presupuestos con barra de avance (en meses completos) |
 | **Calendario** | Grilla mensual con totales por día, detalle del día, balance del mes y saldo al cierre |
 | **Fijos** | Gastos e ingresos recurrentes, con ✓ para registrar cada pago y contador mensual |
 | **Categorías** | CRUD, tienda de iconos y colores, presupuesto mensual por categoría de gasto |
@@ -69,8 +69,14 @@ SPA estilo Monefy con navegación interna (sin cambio de ruta). Móvil: barra in
 - **Disponible hoy** (barra inferior en el móvil, tarjeta en desktop): toda tu plata, acumulada. Es el saldo inicial más todo lo registrado hasta hoy. **No depende del período que estés mirando** ni cambia al pasar de mes: tenés 1000, gastás 100 → 900, cobrás 400 → 1300, cambia el mes → sigue 1300. Tocarlo abre **Tu saldo** (cuenta del período y desglose por día / semana / mes).
 - **Tira del período:** Ingresos, Gastos y Balance (ingresos − gastos) del día, semana, mes, año o rango personalizado. Ingresos y Gastos son también el selector de lo que muestra el donut.
 - **Donut:** gastos o ingresos por categoría. La cifra del centro se ajusta al hueco del anillo (montos de 4+ cifras no se montan sobre el aro). Tres estilos de lista en el móvil: Anillo, Leyenda, Grilla.
-- **Presupuestos:** si el rango es un mes completo, cada categoría de gasto con presupuesto muestra gasto vs límite (ámbar al 80%, rojo al superarlo).
+- **Presupuestos:** si el rango es un mes completo, cada categoría de gasto con presupuesto muestra gasto vs límite ("€ 6 de € 30"). Solo el límite lleva color, para distinguirlo del gasto: verde mientras vas bien, ámbar desde el 80% (si el presupuesto tiene el aviso al 80%) y rojo al superarlo; la barra toma el mismo color.
 - Navegación `‹ ›` por período; tocar la etiqueta abre el selector de rango.
+
+### Movimientos
+
+- Agrupados por categoría (con una sola categoría filtrada, lista plana por fecha). Tocar un movimiento lo edita.
+- **Presupuestos:** con el rango en un mes completo (y sin filtrar solo ingresos), cada categoría de gasto con presupuesto muestra siempre, abierta o cerrada, su avance: "Presupuesto € 6 de € 30" con barra y los mismos colores que el Resumen. Las categorías con presupuesto pero sin gastos en el mes también aparecen ("Sin movimientos", en cero). En otros rangos (semana, año, personalizado) no se muestran.
+- **Cómo se pagó:** al cargar un gasto se elige Efectivo, Bizum, Débito o Crédito (opcional; solo gastos, no ingresos). Viene preseleccionado el último que usaste en ese dispositivo, y la lista lo muestra junto a la fecha ("12 oct · Bizum"). Se guarda en la propiedad `PaymentMethod` de Transactions, que la app crea sola en tu Notion.
 
 ### Fijos
 
@@ -83,7 +89,7 @@ Lista de gastos e ingresos fijos (alquiler, suscripciones, sueldo). Cada fila di
 - **Tema:** automático, claro u oscuro. **Color:** Verde, Turquesa o **Grafito** (escala de grises; ingresos en verde, gastos en rojo y categorías conservan su color).
 - **Estilo del resumen** en el móvil.
 - **Notion:** estado, cambiar de cuenta, desconectar.
-- **Mantenimiento:** *Preparar Notion* (agrega a Subscriptions las propiedades que falten; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion, con los IDs de tus bases en lugar de los de ejemplo).
+- **Mantenimiento:** *Preparar Notion* (agrega las propiedades que falten: las de Subscriptions y `PaymentMethod` en Transactions; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion, con los IDs de tus bases en lugar de los de ejemplo).
 
 ---
 
@@ -124,7 +130,7 @@ Reglas:
 
 | Base | Qué usa la app |
 |------|----------------|
-| Transactions | Gastos e ingresos (monto, moneda, fecha, categoría, nota, fijo que lo originó) |
+| Transactions | Gastos e ingresos (monto, moneda, fecha, categoría, nota, medio de pago en gastos, fijo que lo originó) |
 | Accounts | Solo `InitialBalance` de la cuenta "Principal" (o la primera no archivada) |
 | Categories | Nombre, tipo (Gasto/Ingreso), icono Lucide y color hex |
 | Subscriptions | Los gastos e ingresos fijos (frecuencia, día del mes, próximo vencimiento, último pago, estado) |
@@ -143,11 +149,11 @@ Todas las rutas (salvo `/api/setup`) requieren la cookie de conexión. Los fallo
 
 | Ruta | Método | Función |
 |------|--------|---------|
-| `/api/setup` | POST | Conecta Notion (`notionToken`, `pageUrl`, `remember`): valida el token, encuentra las 6 bases, agrega a Subscriptions las propiedades que falten (si falla, no bloquea) y guarda la cookie. Pública, con límite de intentos |
+| `/api/setup` | POST | Conecta Notion (`notionToken`, `pageUrl`, `remember`): valida el token, encuentra las 6 bases, agrega las propiedades que falten a Subscriptions y Transactions (`PaymentMethod`; si falla, no bloquea) y guarda la cookie. Pública, con límite de intentos |
 | `/api/setup` | DELETE | Desconecta este dispositivo (borra la cookie). Idempotente |
 | `/api/me` | GET | Estado de la conexión `{ connected, via, remember }`; `?full=1` suma los IDs y la página padre |
-| `/api/transactions` | GET / POST | Lista por año (`?year=`) / crea |
-| `/api/transactions/[id]` | PATCH / DELETE | Edita / borra |
+| `/api/transactions` | GET / POST | Lista por año (`?year=`) / crea (`paymentMethod` opcional, solo gastos) |
+| `/api/transactions/[id]` | PATCH / DELETE | Edita (`paymentMethod: null` lo borra) / borra |
 | `/api/transactions/history` | GET | `?before=YYYY-MM-DD`: todo lo anterior (alimenta el saldo) |
 | `/api/accounts/opening` | GET / PUT | Saldo inicial (`Accounts.InitialBalance`) |
 | `/api/categories`, `/api/categories/[id]` | GET, POST / PATCH, DELETE | CRUD (DELETE archiva) |
@@ -241,7 +247,7 @@ components/app/
   screen-dashboard.tsx  # Resumen   screen-movimientos.tsx   screen-calendario.tsx
   screen-recurrentes.tsx  # Fijos   screen-categorias.tsx    screen-ajustes.tsx
   balance.tsx           # PeriodSummary, Monedero, BalanceCard, hoja "Tu saldo"
-  ui.tsx                # SegmentedControl, RangeNav, CenterBalance, Toast, StateView
+  ui.tsx                # SegmentedControl, RangeNav, CenterBalance, BudgetAmount/BudgetBar, Toast, StateView
   Donut.tsx  Coin.tsx  Icon.tsx  Sheet.tsx  useElementSize.ts
   modal-*.tsx           # nuevo movimiento, tienda de iconos, fijo, rango, filtros
 
@@ -249,6 +255,7 @@ lib/
   auth/                 # session.ts (cookie cifrada), csrf.ts, rate-limit.ts
   notion/               # client.ts + una librería por base + schemas, errores, payments
   balance.ts            # Disponible hoy y saldo del período (funciones puras)
+  budget.ts             # Estado de un presupuesto (ok / cerca / superado)
   recurrence.ts         # Fechas de fijos, estado y contador mensual
   date-range.ts         # Motor de rangos (día/semana/mes/año/personalizado)
   format.ts             # Moneda, fechas, ajuste de fuente

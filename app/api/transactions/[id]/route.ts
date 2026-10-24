@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateTransaction, deleteTransaction } from "@/lib/notion/transactions";
+import { PaymentMethodSchema } from "@/lib/notion/schemas";
 import { getNotionCredsFromRequest } from "@/lib/auth/session";
 import { checkMutationLimit } from "@/lib/auth/rate-limit";
 import { notionErrorResponse } from "@/lib/notion/errors";
@@ -12,6 +13,8 @@ const PatchSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato esperado: YYYY-MM-DD").optional(),
   categoryId: z.string().optional(),
   notes: z.string().max(500).optional(),
+  // null borra el medio de pago
+  paymentMethod: PaymentMethodSchema.nullable().optional(),
 });
 
 export async function PATCH(

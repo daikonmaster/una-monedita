@@ -70,6 +70,13 @@ export function endOfYear(d: Date): Date {
   return endOfDay(new Date(d.getFullYear(), 11, 31));
 }
 
+// Presupuestos son mensuales por definición del schema de Notion — solo tiene
+// sentido mostrarlos contra el gasto real cuando el rango elegido es,
+// justamente, un mes completo (period "Mes", o un rango custom que coincide).
+export function isFullMonthRange(range: { start: Date; end: Date }): boolean {
+  return range.start.getDate() === 1 && range.end.getTime() === endOfMonth(range.start).getTime();
+}
+
 // Adds whole months preserving day-of-month, clamped when the target month is
 // shorter (31 ene + 1 mes → 28/29 feb, no 3 mar). Usado por navMonth (Calendario).
 export function addMonthsClamped(d: Date, months: number): Date {

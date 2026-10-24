@@ -3,11 +3,12 @@
 import { useStore, type TxType } from "./store";
 import { CatBubble, Icon } from "./Icon";
 import { Donut } from "./Donut";
-import { PeriodPills, RangeNav, CenterBalance, StateView } from "./ui";
+import { PeriodPills, RangeNav, CenterBalance, StateView, BudgetAmount, BudgetBar, BUDGET_FILL } from "./ui";
 import { Monedero, BalanceCard, PeriodSummary } from "./balance";
 import { useElementSize } from "./useElementSize";
 import { fmt, fmtShort } from "@/lib/format";
-import { daysBetween, endOfMonth, rangeLabel as formatRangeLabel } from "@/lib/date-range";
+import { daysBetween, isFullMonthRange, rangeLabel as formatRangeLabel } from "@/lib/date-range";
+import { budgetState } from "@/lib/budget";
 
 // Tamaño del anillo entre min y max que entre en el contenedor: el anillo de
 // 332px fijo no entraba en un iPhone chico (375×667).
@@ -58,13 +59,6 @@ function Ring({ size }: { size: number }) {
   );
 }
 
-// Presupuestos son mensuales por definición del schema de Notion — solo tiene
-// sentido mostrarlos contra el gasto real cuando el rango elegido es,
-// justamente, un mes completo (period "Mes", o un rango custom que coincide).
-function isFullMonthRange(range: { start: Date; end: Date }): boolean {
-  return range.start.getDate() === 1 && range.end.getTime() === endOfMonth(range.start).getTime();
-}
-
 export function LegendList({ limit = 99, compact = false }: { limit?: number; compact?: boolean }) {
   const { breakdown, setScreen, currency, budgets, range, focus } = useStore();
   const showBudgets = focus === "expense" && isFullMonthRange(range);
@@ -72,11 +66,11 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
     <div style={{ display: "flex", flexDirection: "column" }}>
       {breakdown.slice(0, limit).map((b) => {
         const budget = showBudgets ? budgets.find((bd) => bd.categoryId === b.cat) : undefined;
-        const budgetPct = budget && budget.limit > 0 ? Math.min(b.total / budget.limit, 1) : null;
-        const over = budgetPct !== null && b.total > budget!.limit;
-        const near = !over && budgetPct !== null && budget!.alertAt80 && budgetPct >= 0.8;
-        const barColor = over ? "var(--expense-fill)" : near ? "var(--warn)" : b.color;
-        const pct = Math.round((budgetPct ?? b.pct) * 100);
+        const state = budget && budget.limit > 0 ? budgetState(b.total, budget.limit, budget.alertAt80) : null;
+        const over = state?.level === "over";
+        const near = state?.level === "near";
+        const barColor = state ? BUDGET_FILL[state.level] : b.color;
+        const pct = Math.round((state?.ratio ?? b.pct) * 100);
         return (
           <button
             key={b.cat}
@@ -99,12 +93,16 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, gap: 8 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{b.name}</span>
-                <span className="num tnum" style={{ fontWeight: 600, fontSize: 14, color: over ? "var(--expense)" : "var(--text)" }}>
-                  {budget ? `${fmt(b.total, currency)} de ${fmt(budget.limit, currency)}` : fmt(b.total, currency)}
+                <span style={{ fontWeight: 600, fontSize: 14 }}>
+                  {budget && state ? (
+                    <BudgetAmount spent={b.total} limit={budget.limit} level={state.level} />
+                  ) : (
+                    <span className="num tnum" style={{ color: "var(--text)" }}>{fmt(b.total, currency)}</span>
+                  )}
                 </span>
               </div>
               <div style={{ height: 5, borderRadius: 999, background: "var(--bg-2)", overflow: "hidden" }}>
-                <div style={{ width: (budgetPct ?? b.pct) * 100 + "%", height: "100%", borderRadius: 999, background: barColor }} />
+                <div style={{ width: (state?.ratio ?? b.pct) * 100 + "%", height: "100%", borderRadius: 999, background: barColor }} />
               </div>
             </div>
             <span style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 3, fontSize: 12, fontWeight: 800, color: over ? "var(--expense)" : near ? "var(--warn)" : "var(--text-2)", minWidth: 40 }}>
@@ -243,22 +241,20 @@ export function DashboardMobile() {
         <div style={{ padding: "0 16px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {breakdown.slice(0, 8).map((b) => {
             const bud = showBudgets ? budgets.find((x) => x.categoryId === b.cat) : undefined;
-            const pct = bud && bud.limit > 0 ? Math.min(b.total / bud.limit, 1) : null;
-            const over = pct !== null && b.total > bud!.limit;
-            const near = !over && pct !== null && bud!.alertAt80 && pct >= 0.8;
+            const state = bud && bud.limit > 0 ? budgetState(b.total, bud.limit, bud.alertAt80) : null;
             return (
               <div key={b.cat} className="card" style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 11px" }}>
                 <CatBubble icon={b.icon} color={b.color} size={34} stroke={2} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</div>
-                  <div className="num tnum" style={{ fontSize: 12, color: over ? "var(--expense)" : near ? "var(--warn)" : "var(--text-2)", fontWeight: 600 }}>
-                    {bud ? `${fmtShort(b.total, currency)} / ${fmtShort(bud.limit, currency)}` : `${Math.round(b.pct * 100)}% · ${fmtShort(b.total, currency)}`}
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>
+                    {bud && state ? (
+                      <BudgetAmount spent={b.total} limit={bud.limit} level={state.level} sep="/" short />
+                    ) : (
+                      <span className="num tnum" style={{ color: "var(--text-2)" }}>{`${Math.round(b.pct * 100)}% · ${fmtShort(b.total, currency)}`}</span>
+                    )}
                   </div>
-                  {pct !== null && (
-                    <div style={{ height: 4, borderRadius: 999, background: "var(--bg-2)", overflow: "hidden", marginTop: 4 }}>
-                      <div style={{ width: pct * 100 + "%", height: "100%", borderRadius: 999, background: over ? "var(--expense-fill)" : near ? "var(--warn)" : b.color }} />
-                    </div>
-                  )}
+                  {state && <BudgetBar ratio={state.ratio} level={state.level} height={4} style={{ marginTop: 4 }} />}
                 </div>
               </div>
             );

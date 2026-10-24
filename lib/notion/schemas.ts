@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAYMENT_METHODS } from "@/lib/payment";
 
 export const CurrencySchema = z.enum(["ARS", "USD", "EUR", "BTC", "ETH", "USDT"]);
 export type Currency = z.infer<typeof CurrencySchema>;
@@ -39,6 +40,10 @@ export const AccountSchema = z.object({
 export type Account = z.infer<typeof AccountSchema>;
 
 // ─── Transaction ───────────────────────────────────────────────────────────
+// Cómo se pagó un gasto (propiedad select `PaymentMethod`, opcional, solo gastos).
+export { PAYMENT_METHODS, type PaymentMethod } from "@/lib/payment";
+export const PaymentMethodSchema = z.enum(PAYMENT_METHODS);
+
 export const TransactionSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,6 +58,7 @@ export const TransactionSchema = z.object({
   accountToId: z.string().nullable(),
   categoryId: z.string().nullable(),
   subscriptionId: z.string().nullable(),
+  paymentMethod: PaymentMethodSchema.nullable(),
   createdAt: z.string(),
 });
 export type Transaction = z.infer<typeof TransactionSchema>;

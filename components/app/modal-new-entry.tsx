@@ -3,9 +3,22 @@
 import { useState, useMemo, useEffect, type ReactNode } from "react";
 import { useStore, toISO, type TxType, type UITx, type UISub } from "./store";
 import { CatBubble, Icon } from "./Icon";
-import { Segmented } from "./ui";
+import { Segmented, SegmentedControl } from "./ui";
 import { Sheet, SheetHeader } from "./Sheet";
 import { fmt, fmtDayMonth } from "@/lib/format";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/payment";
+
+// Último medio de pago usado en este dispositivo: viene preseleccionado al
+// cargar un gasto nuevo. El modal solo se monta tras una acción del usuario,
+// así que leer localStorage en el inicializador del estado es seguro.
+function readLastPay(): PaymentMethod | null {
+  try {
+    const v = localStorage.getItem("um.pay");
+    return (PAYMENT_METHODS as readonly string[]).includes(v ?? "") ? (v as PaymentMethod) : null;
+  } catch {
+    return null;
+  }
+}
 
 // safe calculator: + − × ÷ with × ÷ precedence
 function calc(expr: string): number {
@@ -78,6 +91,8 @@ function EntryForm({
   });
   const [note, setNote] = useState(edit ? edit.note : fromSub ? fromSub.name : "");
   const [date, setDate] = useState(initialDate);
+  // Cómo se pagó (solo gastos, opcional): al editar el del movimiento, si no el último usado
+  const [pay, setPay] = useState<PaymentMethod | null>(() => (edit ? edit.pay : readLastPay()));
   const [panel, setPanel] = useState<"pad" | "cats">("pad");
   // confirmación dentro del propio sheet: descartar lo escrito / eliminar el movimiento
   const [confirmKind, setConfirmKind] = useState<"discard" | "delete" | null>(null);
@@ -117,9 +132,18 @@ function EntryForm({
     if (!amount || amount <= 0 || !catId) return;
     const [y, m, d] = effectiveDate.split("-").map(Number);
     const dateObj = new Date(y, m - 1, d, 12);
-    if (fromSub) void confirmSubscription(fromSub, { date: dateObj, amount, cat: catId, note: note.trim() });
-    else if (edit) void updateTransaction(edit.id, { cat: catId, amount, date: dateObj, note: note.trim() });
-    else void addTransaction({ cat: catId, amount, date: dateObj, note: note.trim() });
+    const payToSave = type === "expense" ? pay : null;
+    if (payToSave) {
+      try {
+        localStorage.setItem("um.pay", payToSave);
+      } catch {
+        // sin storage (modo privado): solo se pierde la preselección
+      }
+    }
+    if (fromSub) void confirmSubscription(fromSub, { date: dateObj, amount, cat: catId, note: note.trim(), pay: payToSave });
+    // al editar, el medio de pago solo viaja si cambió: evita tocar el schema de Notion de balde
+    else if (edit) void updateTransaction(edit.id, { cat: catId, amount, date: dateObj, note: note.trim(), ...(payToSave !== edit.pay ? { pay: payToSave } : {}) });
+    else void addTransaction({ cat: catId, amount, date: dateObj, note: note.trim(), pay: payToSave });
     closeEntry();
   }
 
@@ -261,6 +285,16 @@ function EntryForm({
                 <span style={{ flex: 1, textAlign: "left", fontWeight: 700, fontSize: 15, color: cat ? "var(--text)" : "var(--text-3)" }}>{cat ? cat.name : "Elegir categoría"}</span>
                 <Icon name="ChevronRight" size={20} stroke={2.2} color="var(--text-3)" />
               </button>
+
+                {type === "expense" && (
+                  <SegmentedControl<PaymentMethod>
+                    label="Cómo se pagó"
+                    options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                    value={pay}
+                    onChange={setPay}
+                    stretch
+                  />
+                )}
 
                 <div style={{ display: "flex", gap: 10 }}>
                   <div className="field-wrap" style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--line)" }}>

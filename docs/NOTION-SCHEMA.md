@@ -78,6 +78,7 @@ Cada fila = un movimiento (gasto, ingreso o transferencia).
 | `AccountTo` | relation → Accounts | Solo en `Transferencia` |
 | `Category` | relation → Categories | |
 | `Subscription` | relation → Subscriptions | Presente solo si la tx fue generada al registrar el pago de un recurrente |
+| `PaymentMethod` | select | `Efectivo` \| `Bizum` \| `Débito` \| `Crédito`. Opcional y solo en gastos (cómo se pagó). La app la crea sola al conectar Notion, con "Preparar Notion" o al guardar el primer medio de pago |
 | `CreatedAt` | created_time | Solo lectura |
 
 **Crear una transacción de gasto:**
@@ -189,13 +190,16 @@ POST /v1/pages
     "Amount": { "number": 3500 },
     "Currency": { "select": { "name": "ARS" } },
     "Date": { "date": { "start": "2026-08-07" } },
-    "Category": { "relation": [{ "id": "<category_page_id>" }] }
+    "Category": { "relation": [{ "id": "<category_page_id>" }] },
+    "PaymentMethod": { "select": { "name": "Bizum" } }
   }
 }
 ```
 
-Para un ingreso, `Type = "Ingreso"`. `Name` es cosmético — no leerlo como
-fuente de verdad del monto, usar siempre `Amount`.
+`PaymentMethod` es opcional y solo para gastos (`Efectivo`, `Bizum`, `Débito` o
+`Crédito`); si la base es vieja y no tiene la propiedad, omitirla. Para un
+ingreso, `Type = "Ingreso"` y sin `PaymentMethod`. `Name` es cosmético: no
+leerlo como fuente de verdad del monto, usar siempre `Amount`.
 
 ### Crear un fijo (gasto o ingreso recurrente)
 

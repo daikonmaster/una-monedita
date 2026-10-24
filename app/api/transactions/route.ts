@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createTransaction, getTransactionsByYear } from "@/lib/notion/transactions";
+import { PaymentMethodSchema } from "@/lib/notion/schemas";
 import { getNotionCredsFromRequest } from "@/lib/auth/session";
 import { checkMutationLimit } from "@/lib/auth/rate-limit";
 import { notionErrorResponse } from "@/lib/notion/errors";
@@ -34,6 +35,7 @@ const BodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato esperado: YYYY-MM-DD").optional(),
   categoryId: z.string().optional(),
   notes: z.string().max(500).optional(),
+  paymentMethod: PaymentMethodSchema.optional(),
 });
 
 export async function POST(request: Request) {
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { type, amount, currency, date, categoryId, notes } = parsed.data;
+  const { type, amount, currency, date, categoryId, notes, paymentMethod } = parsed.data;
   try {
     const tx = await createTransaction({
       type,
@@ -58,6 +60,7 @@ export async function POST(request: Request) {
       date: date ?? new Date().toISOString().split("T")[0],
       categoryId,
       notes,
+      paymentMethod,
     }, creds);
     return NextResponse.json(tx, { status: 201 });
   } catch (err) {
