@@ -22,10 +22,13 @@ function readLastPay(): PaymentMethod | null {
 
 // safe calculator: + − × ÷ with × ÷ precedence
 function calc(expr: string): number {
-  const toks = String(expr).match(/(\d+\.?\d*|[+\-×÷])/g);
+  const toks = String(expr).match(/(\d+\.?\d*|[+\-−×÷])/g);
   if (!toks) return 0;
   const t = toks.map((x) => (x === "×" ? "*" : x === "÷" ? "/" : x === "−" ? "-" : x));
   while (t.length && "*/+-".includes(t[t.length - 1])) t.pop();
+  if (!t.length) return 0;
+  if (t[0] === "-" || t[0] === "+") t.unshift("0");
+  else if (t[0] === "*" || t[0] === "/") t.shift();
   if (!t.length) return 0;
   const stack = [parseFloat(t[0]) || 0];
   for (let i = 1; i < t.length; i += 2) {
@@ -39,7 +42,7 @@ function calc(expr: string): number {
   return stack.reduce((a, b) => a + b, 0);
 }
 
-function Key({ label, onClick, variant, accent }: { label: ReactNode; onClick: () => void; variant?: "op"; accent: string }) {
+function Key({ label, onClick, variant, accent, span }: { label: ReactNode; onClick: () => void; variant?: "op"; accent: string; span?: number }) {
   return (
     <button
       onClick={onClick}
@@ -56,6 +59,7 @@ function Key({ label, onClick, variant, accent }: { label: ReactNode; onClick: (
         display: "grid",
         placeItems: "center",
         height: 54,
+        gridColumn: span ? `span ${span}` : undefined,
       }}
     >
       {label}
@@ -103,7 +107,7 @@ function EntryForm({
 
   const cats = useMemo(() => categories.filter((c) => c.type === type), [categories, type]);
   const cat = categories.find((c) => c.id === catId);
-  const hasOp = /[+\-×÷]/.test(expr);
+  const hasOp = /[+\-−×÷]/.test(expr.slice(1));
   const result = calc(expr);
 
   function push(ch: string) {
@@ -114,11 +118,18 @@ function EntryForm({
         return e + ch;
       }
       if (ch === ".") {
-        const last = e.split(/[+\-×÷]/).pop()!;
+        const last = e.split(/[+\-−×÷]/).pop()!;
         if (last.includes(".")) return e;
         return e + (e === "" || "+−×÷".includes(e[e.length - 1]) ? "0." : ".");
       }
       return e + ch;
+    });
+  }
+  function equals() {
+    setExpr((e) => {
+      if (!/[+\-−×÷]/.test(e.slice(1))) return e;
+      const r = Math.round(calc(e) * 100) / 100;
+      return r === 0 ? "" : String(r).replace("-", "−");
     });
   }
   function back() {
@@ -176,8 +187,12 @@ function EntryForm({
       else if (e.key === "-") push("−");
       else if (e.key === "*") push("×");
       else if (e.key === "/") push("÷");
+      else if (e.key === "=") equals();
       else if (e.key === "Backspace") back();
-      else if (e.key === "Enter") confirm();
+      else if (e.key === "Enter") {
+        if (hasOp) equals();
+        else confirm();
+      }
       else return;
       e.preventDefault();
     }
@@ -264,9 +279,9 @@ function EntryForm({
         ) : (
           <div className="app-scroll" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
             <div style={{ padding: "6px 22px 14px", textAlign: "right" }}>
-              {hasOp && <div className="tnum" style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 700, height: 18 }}>{expr.replace(/×/g, " × ").replace(/÷/g, " ÷ ")} =</div>}
+              {hasOp && <div className="tnum" style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 700, height: 18 }}>{expr.slice(0, 1) + expr.slice(1).replace(/×/g, " × ").replace(/÷/g, " ÷ ").replace(/\+/g, " + ").replace(/−/g, " − ").replace(/\./g, ",")} =</div>}
               <div className="num tnum" style={{ fontSize: 44, fontWeight: 600, color: result > 0 ? accent : "var(--text-3)", lineHeight: 1.1 }}>
-                {hasOp ? fmt(Math.round(result * 100) / 100, currency) : expr === "" ? sym + " 0" : sym + " " + expr}
+                {hasOp ? fmt(Math.round(result * 100) / 100, currency) : expr === "" ? sym + " 0" : sym + " " + expr.replace(/\./g, ",")}
               </div>
             </div>
 
@@ -313,7 +328,8 @@ function EntryForm({
                 <Key accent={accent} label="7" onClick={() => push("7")} /><Key accent={accent} label="8" onClick={() => push("8")} /><Key accent={accent} label="9" onClick={() => push("9")} /><Key accent={accent} label="÷" variant="op" onClick={() => push("÷")} />
                 <Key accent={accent} label="4" onClick={() => push("4")} /><Key accent={accent} label="5" onClick={() => push("5")} /><Key accent={accent} label="6" onClick={() => push("6")} /><Key accent={accent} label="×" variant="op" onClick={() => push("×")} />
                 <Key accent={accent} label="1" onClick={() => push("1")} /><Key accent={accent} label="2" onClick={() => push("2")} /><Key accent={accent} label="3" onClick={() => push("3")} /><Key accent={accent} label="−" variant="op" onClick={() => push("−")} />
-                <Key accent={accent} label="." onClick={() => push(".")} /><Key accent={accent} label="0" onClick={() => push("0")} /><Key accent={accent} label={<Icon name="Delete" size={22} stroke={2} color="var(--text-2)" />} onClick={back} /><Key accent={accent} label="+" variant="op" onClick={() => push("+")} />
+                <Key accent={accent} label="," onClick={() => push(".")} /><Key accent={accent} label="0" onClick={() => push("0")} /><Key accent={accent} label={<Icon name="Delete" size={22} stroke={2} color="var(--text-2)" />} onClick={back} /><Key accent={accent} label="+" variant="op" onClick={() => push("+")} />
+                <Key accent={accent} label="=" variant="op" span={4} onClick={equals} />
               </div>
               <button
                 onClick={confirm}
