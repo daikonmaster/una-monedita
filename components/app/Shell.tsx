@@ -82,7 +82,7 @@ function MobileLayout() {
       <main style={{ flex: 1, minHeight: 0 }}>
         <ScreenBody screen={screen} />
       </main>
-      <nav aria-label="Secciones" className="mobile-nav" style={{ display: "flex", borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto", paddingBottom: "calc(4px + env(safe-area-inset-bottom))" }}>
+      <nav aria-label="Secciones" className="mobile-nav" style={{ display: "flex", borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto" }}>
         {NAV_MOBILE.map((n) => {
           const on = activeTab === n.id;
           return (
@@ -90,7 +90,7 @@ function MobileLayout() {
               key={n.id}
               onClick={() => setScreen(n.id)}
               aria-current={on ? "page" : undefined}
-              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 0 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
+              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "6px 0 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
             >
               <span
                 style={{ width: 56, height: 30, borderRadius: 15, display: "grid", placeItems: "center", background: on ? "var(--accent-soft)" : "transparent", transition: "background .15s" }}
@@ -102,6 +102,8 @@ function MobileLayout() {
           );
         })}
       </nav>
+      {/* Le pasa a Safari 26 el color de la nav para la franja de su barra (ver .chin-tint en globals.css). */}
+      <div aria-hidden="true" className="chin-tint" />
     </div>
   );
 }
@@ -211,7 +213,7 @@ export function Shell() {
   // El tema y el acento viven en <html> (ver app/layout.tsx y el store).
   return (
     <div
-      className={"app-root " + (isDesktop ? "desktop" : "mobile")}
+      className={"app-root app-shell " + (isDesktop ? "desktop" : "mobile")}
       style={{ height: "100dvh", width: "100%", overflow: "hidden", position: "relative", display: "flex", flexDirection: "column" }}
     >
       <div style={{ flex: 1, minHeight: 0 }}>{isDesktop ? <DesktopLayout /> : <MobileLayout />}</div>

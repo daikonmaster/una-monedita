@@ -133,6 +133,7 @@ SPA estilo Monefy con navegación interna (sin cambio de ruta). Móvil: barra in
 ### Movimientos
 
 - Agrupados por categoría (con una sola categoría filtrada, lista plana por fecha). Tocar un movimiento lo edita.
+- **Calculadora del monto** con tecla "=" (también "=" y Enter del teclado resuelven la cuenta), decimales con coma en cualquier operando y resta con "−".
 - **Presupuestos:** con el rango en un mes completo (y sin filtrar solo ingresos), cada categoría de gasto con presupuesto muestra siempre, abierta o cerrada, su avance: "Presupuesto € 6 de € 30" con barra y los mismos colores que el Resumen. Las categorías con presupuesto pero sin gastos en el mes también aparecen ("Sin movimientos", en cero). En otros rangos (semana, año, personalizado) no se muestran.
 - **Cómo se pagó:** al cargar un gasto se elige Efectivo, Bizum, Débito o Crédito (opcional; solo gastos, no ingresos). Viene preseleccionado el último que usaste en ese dispositivo, y la lista lo muestra junto a la fecha ("12 oct · Bizum"). Se guarda en la propiedad `PaymentMethod` de Transactions, que la app crea sola en tu Notion.
 
