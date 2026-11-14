@@ -1,25 +1,38 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   UnaMonedita: warm base + accent, light/dark/system.
-   Fonts via next/font: --font-app (Nunito), --font-serif (Fraunces),
-   --font-geist-mono (Geist Mono).
+   UnaMonedita: cyber brutalista (sistema "Franco Recabarren"), claro/oscuro.
+   Fuentes via next/font: --font-jb (JetBrains Mono, la voz del sistema) y
+   --font-anton (Anton, solo titulares y cifras grandes).
+
+   Leyes del sistema:
+   - Radio 0 en todo. Solo .dot (puntos de estado) es redondo.
+   - Sin sombras, sin degradados, sin tintes suaves.
+   - Hairline 1px --line para la grilla y separadores; 1.5px --ink para
+     controles y tarjetas.
+   - Seleccionado = invertido (fondo --ink, texto --paper). Nunca "fondo suave
+     + texto de color".
+   - Etiquetas, botones, nav y titulares en MAYUSCULAS por CSS (text-transform);
+     los textos del usuario (categorias, notas) quedan como se escribieron.
 
    Regla de color: un color = un significado.
-   - --accent*      : SOLO botón primario, nav activa, anillo "hoy", focus. Cambia
-                      con [data-accent] (verde / teal / grafito).
-   - --income*      : ingresos. Fijo, no cambia con el acento.
-   - --expense*     : gastos. Fijo.
-   - --warn         : aviso de presupuesto al 80%.
-   Los tokens viven en :root + [data-theme] para que también resuelvan fuera de
-   .app-root (p. ej. el Toast). El tema resuelto ("light"|"dark") se escribe en
+   - --ink / --paper : texto y fondo. Ingresos = --ink.
+   - --violet        : gastos + acento (enlaces, foco, barras de datos).
+   - --lime          : UNA senal por pantalla: el Disponible hoy. Siempre como
+                       fondo con --on-lime encima, nunca como texto.
+   Los nombres viejos (--bg, --surface, --text, --accent*, --income*,
+   --expense*) siguen existiendo y apuntan a esta paleta.
+   Los tokens viven en :root + [data-theme] para que tambien resuelvan fuera
+   de .app-root. El tema resuelto ("light"|"dark") se escribe en
    <html data-theme> antes del primer paint (script en app/layout.tsx).
+   [data-accent] ya no cambia nada: el sistema tiene un solo acento.
    ========================================================================== */
 
 :root {
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mono: var(--font-jb), "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: var(--font-anton), Anton, "Bebas Neue", Impact, "Arial Narrow", sans-serif;
 
-  /* ---- Category palette ---- */
+  /* ---- Paleta de categorias: colores de DATOS (donut, casillas) ---- */
   --cat-food: #ff8a5c;
   --cat-transport: #4fb6e6;
   --cat-home: #9b8cdb;
@@ -34,147 +47,122 @@
   --cat-gift: #c382d6;
   --cat-salary: #2fa86a;
   --cat-other: #9aa0a6;
+  /* Glifo sobre un color de categoria: siempre tinta oscura. */
+  --on-cat: #0a0a0a;
 
-  /* ---- Radios ---- */
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 16px;
-  --r-xl: 22px;
-  --r-pill: 999px;
+  /* ---- Radios: el sistema es cuadrado ---- */
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+  --r-xl: 0px;
+  --r-pill: 0px;
+  --r-dot: 999px;
 
-  --shadow-modal: 0 8px 24px rgba(25, 24, 23, 0.12);
+  /* ---- Trazos ---- */
+  --stroke-hair: 1px;
+  --stroke-control: 1.5px;
 
+  /* ---- Espaciado ---- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --s4: 24px;
+  --s5: 40px;
+  --s6: 64px;
+
+  /* ---- Senal: igual en los dos temas ---- */
+  --lime: #d4ff3a;
+  --on-lime: #0a0a0a;
+
+  /* Sin sombras. Los tokens quedan por compatibilidad. */
+  --shadow-soft: none;
+  --shadow-fab: none;
+  --shadow-modal: none;
 }
 
-/* ============ LIGHT (default) ============ */
+/* ============ CLARO (principal) ============ */
 :root,
 [data-theme="light"] {
-  --bg: #f4f3ee;
-  --bg-2: #eeede6;
-  --surface: #fffdf8;
-  --surface-2: #f6f4ee;
-  --line: #e3ded2;
-  --line-strong: #d3ccbd;
-  --text: #211f1c;
-  --text-2: #5a554e;
-  --text-3: #6e685e;
+  --paper: #f2f2ef;
+  --ink: #0a0a0a;
+  --violet: #6b3df5;
+  --on-violet: #ffffff;
+  --inv-muted: #c9c9c4;
+  --inv-violet: #a78bff;
 
-  --accent: #2fa86a;
-  --accent-ink: #1e7146;
-  --accent-soft: #e3f3ea;
-  --on-accent: #ffffff;
+  --bg: #f2f2ef;
+  --bg-2: #e6e6e1;
+  --surface: #fafaf8;
+  --surface-2: #f2f2ef;
+  --line: #b9b9b4;
+  --line-strong: #0a0a0a;
+  --text: #0a0a0a;
+  --text-2: #5c5c58;
+  --text-3: #5c5c58;
 
-  --income: #1e7146;
-  --income-fill: #2fa86a;
-  --income-soft: #e3f3ea;
+  --accent: #0a0a0a;
+  --accent-ink: #0a0a0a;
+  --accent-soft: #e6e6e1;
+  --on-accent: #f2f2ef;
 
-  --expense: #b83d33;
-  --expense-fill: #e0584a;
-  --expense-soft: #fae3df;
-  --on-income: #ffffff;
+  --income: #0a0a0a;
+  --income-fill: #0a0a0a;
+  --income-soft: #e6e6e1;
+  --on-income: #f2f2ef;
+
+  --expense: #6b3df5;
+  --expense-fill: #6b3df5;
+  --expense-soft: #e6e6e1;
   --on-expense: #ffffff;
 
-  --warn: #9a6412;
-  --glyph-mix: 55%;
-  --coin-face: #5ce8c0;
-
-  --shadow-soft: 0 1px 2px rgba(25, 24, 23, 0.05), 0 8px 24px rgba(25, 24, 23, 0.06);
-  --shadow-fab: 0 6px 16px rgba(31, 113, 70, 0.28);
-  --ring: rgba(47, 168, 106, 0.3);
+  --warn: #0a0a0a;
+  --coin-face: #d4ff3a;
+  --grid: rgba(185, 185, 180, 0.35);
+  --scrim: rgba(10, 10, 10, 0.6);
+  --ring: #6b3df5;
   color-scheme: light;
 }
 
-/* ============ DARK ============ */
+/* ============ OSCURO ============ */
 [data-theme="dark"] {
-  --bg: #171614;
-  --bg-2: #201e1b;
-  --surface: #232120;
-  --surface-2: #2b2825;
-  --line: #36322d;
-  --line-strong: #46413a;
-  --text: #f3f1ea;
-  --text-2: #c5beb2;
-  --text-3: #9d958a;
+  --paper: #0b0b0d;
+  --ink: #f2f2ee;
+  --violet: #a78bff;
+  --on-violet: #0a0a0a;
+  --inv-muted: #5c5c58;
+  --inv-violet: #6b3df5;
 
-  --accent: #3ec47c;
-  --accent-ink: #3ec47c;
-  --accent-soft: #1c2c22;
-  --on-accent: #0e1a12;
+  --bg: #0b0b0d;
+  --bg-2: #1c1c20;
+  --surface: #141417;
+  --surface-2: #1c1c20;
+  --line: #3a3a40;
+  --line-strong: #f2f2ee;
+  --text: #f2f2ee;
+  --text-2: #a3a3a0;
+  --text-3: #a3a3a0;
 
-  --income: #3ec47c;
-  --income-fill: #3ec47c;
-  --income-soft: #1c2c22;
+  --accent: #f2f2ee;
+  --accent-ink: #f2f2ee;
+  --accent-soft: #1c1c20;
+  --on-accent: #0b0b0d;
 
-  --expense: #ef6b5d;
-  --expense-fill: #ef6b5d;
-  --expense-soft: #2e1f1c;
-  --on-income: #0e1a12;
-  --on-expense: #1a0e0c;
+  --income: #f2f2ee;
+  --income-fill: #f2f2ee;
+  --income-soft: #1c1c20;
+  --on-income: #0b0b0d;
 
-  --warn: #e0a640;
-  --glyph-mix: 100%;
-  --coin-face: #1c2c22;
+  --expense: #a78bff;
+  --expense-fill: #a78bff;
+  --expense-soft: #1c1c20;
+  --on-expense: #0a0a0a;
 
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px rgba(0, 0, 0, 0.45);
-  --shadow-fab: 0 6px 18px rgba(0, 0, 0, 0.5);
-  --ring: rgba(62, 196, 124, 0.32);
+  --warn: #f2f2ee;
+  --coin-face: #d4ff3a;
+  --grid: rgba(58, 58, 64, 0.55);
+  --scrim: rgba(0, 0, 0, 0.72);
+  --ring: #a78bff;
   color-scheme: dark;
-}
-
-/* ---- Accent overrides (solo tokens --accent*; ingresos no se tocan) ---- */
-[data-accent="teal"] {
-  --accent: #1aa6a0;
-  --accent-ink: #0f6f6b;
-  --accent-soft: #dcf1f0;
-}
-[data-theme="dark"][data-accent="teal"] {
-  --accent: #2fc7c0;
-  --accent-ink: #2fc7c0;
-  --accent-soft: #13302e;
-}
-
-/* ---- Grafito: tema en escala de grises. Reemplaza las superficies, el texto y el
-   acento por grises neutros; ingresos (verde), gastos (rojo), aviso y categorías
-   conservan su color. Especificidad (0,2,0) para ganarle a [data-theme] solo. ---- */
-[data-theme="light"][data-accent="grafito"] {
-  --bg: #f4f4f3;
-  --bg-2: #ececeb;
-  --surface: #ffffff;
-  --surface-2: #f6f6f5;
-  --line: #e2e2e0;
-  --line-strong: #cfcfcc;
-  --text: #1d1d1d;
-  --text-2: #555555;
-  --text-3: #6a6a6a;
-
-  --accent: #262626;
-  --accent-ink: #1d1d1d;
-  --accent-soft: #e8e8e7;
-  --on-accent: #ffffff;
-  --coin-face: #dededc;
-
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.06);
-  --shadow-fab: 0 6px 16px rgba(0, 0, 0, 0.22);
-  --ring: rgba(38, 38, 38, 0.25);
-}
-[data-theme="dark"][data-accent="grafito"] {
-  --bg: #161616;
-  --bg-2: #1f1f1f;
-  --surface: #222222;
-  --surface-2: #2a2a2a;
-  --line: #343434;
-  --line-strong: #454545;
-  --text: #f2f2f2;
-  --text-2: #c6c6c6;
-  --text-3: #9c9c9c;
-
-  --accent: #ececec;
-  --accent-ink: #ececec;
-  --accent-soft: #2e2e2e;
-  --on-accent: #161616;
-  --coin-face: #2e2e2e;
-
-  --ring: rgba(236, 236, 236, 0.3);
 }
 
 * {
@@ -192,18 +180,48 @@ body {
 }
 
 .app-root {
-  font-family: var(--font-app), ui-sans-serif, system-ui, sans-serif;
-  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
   color: var(--text);
   letter-spacing: 0;
+  /* La grilla se ve: hairlines cada 40px sobre paper. */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
   /* Landscape en iPhone: nada bajo la isla o el notch. */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
 
-/* Toque de app nativa en el móvil: sin zoom por doble toque (teclado de la
-   calculadora) y, en botones y la nav, sin menú al mantener presionado ni
-   selección de texto. El resto del texto (IDs de Notion, links, errores) se
+/* Ley del sistema: nada redondeado. Red de contencion sobre cualquier
+   borderRadius inline que quede; .dot es la unica excepcion. */
+.app-root *,
+.app-root *::before,
+.app-root *::after {
+  border-radius: 0 !important;
+}
+.app-root .dot {
+  border-radius: 999px !important;
+}
+
+.app-root ::selection {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
+.app-root button,
+.app-root input,
+.app-root textarea,
+.app-root select {
+  font-family: inherit;
+}
+
+/* Toque de app nativa en el movil: sin zoom por doble toque (teclado de la
+   calculadora) y, en botones y la nav, sin menu al mantener presionado ni
+   seleccion de texto. El resto del texto (IDs de Notion, links, errores) se
    sigue pudiendo copiar. */
 .app-root.mobile {
   touch-action: manipulation;
@@ -215,15 +233,15 @@ body {
 }
 
 /* Shell de la app: .app-shell mide exactamente el viewport visible (100dvh,
-   inline en Shell.tsx) en todos los navegadores, así que el documento no
-   scrollea; el scroll vive en cada .app-scroll. No usar 100vh/100lvh acá: en
-   el móvil miden la pantalla con las barras ocultas y toda la app queda más
+   inline en Shell.tsx) en todos los navegadores, asi que el documento no
+   scrollea; el scroll vive en cada .app-scroll. No usar 100vh/100lvh aca: en
+   el movil miden la pantalla con las barras ocultas y toda la app queda mas
    alta que lo visible.
-   Solo iOS, y solo donde está el shell (:has; /setup también usa .app-root
+   Solo iOS, y solo donde esta el shell (:has; /setup tambien usa .app-root
    pero no .app-shell, y sigue scrolleando): traba el documento por si Safari
-   arranca con la barra minimizada, y saca el rebote elástico de la página
+   arranca con la barra minimizada, y saca el rebote elastico de la pagina
    (cada lista rebota sola). En Android no: con overflow hidden o
-   overscroll-behavior en la raíz, Chrome apaga el pull-to-refresh, la única
+   overscroll-behavior en la raiz, Chrome apaga el pull-to-refresh, la unica
    forma de recargar la app instalada. */
 @supports (-webkit-touch-callout: none) {
   html:has(.app-shell) {
@@ -238,10 +256,10 @@ body {
   }
 }
 
-/* Nav inferior móvil: el borde lo da el inset del dispositivo (home indicator
-   en standalone, barra de gestos de Android). En una pestaña de Safari iOS el
-   inset es 0 y la píldora flotante de la URL monta ~13px sobre la página:
-   14px dejan ~1px sobre la píldora y las etiquetas siguen visibles. */
+/* Nav inferior movil: el borde lo da el inset del dispositivo (home indicator
+   en standalone, barra de gestos de Android). En una pestana de Safari iOS el
+   inset es 0 y la pildora flotante de la URL monta ~13px sobre la pagina:
+   14px dejan ~1px sobre la pildora y las etiquetas siguen visibles. */
 .mobile-nav {
   padding-bottom: max(8px, env(safe-area-inset-bottom));
 }
@@ -258,9 +276,9 @@ body {
 
 /* Safari 26 ignora theme-color: pinta la franja de su barra inferior con el
    fondo del elemento fijo que toca el borde de abajo (si no hay, el del body).
-   Esta tira del color de la nav, tapada por ella, hace que la nav siga detrás
-   de la barra de URL. Safari no vuelve a muestrear con la página quieta: un
-   cambio de tema se ve ahí recién al recargar. */
+   Esta tira del color de la nav, tapada por ella, hace que la nav siga detras
+   de la barra de URL. Safari no vuelve a muestrear con la pagina quieta: un
+   cambio de tema se ve ahi recien al recargar. */
 .chin-tint {
   position: fixed;
   left: 0;
@@ -271,17 +289,17 @@ body {
   pointer-events: none;
 }
 
-/* iOS Safari hace zoom automático al enfocar inputs con fuente < 16px.
-   Red de contención — los estilos inline ya corregidos siguen ganando. */
+/* iOS Safari hace zoom automatico al enfocar inputs con fuente < 16px.
+   Red de contencion: los estilos inline ya corregidos siguen ganando. */
 .app-root input,
 .app-root textarea,
 .app-root select {
   font-size: 16px;
 }
 
-/* ---- Foco visible (teclado) ---- */
+/* ---- Foco visible (teclado): contorno violeta, grueso ---- */
 .app-root :focus-visible {
-  outline: 2px solid var(--accent-ink);
+  outline: 3px solid var(--violet);
   outline-offset: 2px;
 }
 .app-root input:focus-visible,
@@ -291,7 +309,8 @@ body {
 }
 /* Contenedor de un input sin borde propio: el aro va en el wrapper. */
 .field-wrap:focus-within {
-  box-shadow: 0 0 0 2px var(--accent-ink);
+  outline: 3px solid var(--violet);
+  outline-offset: 0;
 }
 .field-wrap input:focus-visible,
 .field-wrap textarea:focus-visible {
@@ -310,133 +329,469 @@ body {
   border: 0;
 }
 
-/* ---- Tipografía ---- */
+/* ==========================================================================
+   Tipografia
+   ========================================================================== */
+
+/* Display: Anton, MAYUSCULAS. Solo titulares y cifras de 22px o mas.
+   Anton tiene un solo peso: font-synthesis evita la negrita falsa si queda
+   algun fontWeight inline. */
+/* .app-root delante: le gana a `.app-root button { font-family: inherit }`. */
+.display,
+.num-coin,
+.sheet-title,
+.app-root .display,
+.app-root .num-coin,
+.app-root .sheet-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-synthesis: none;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.sheet-title {
+  font-size: 28px;
+}
+
+/* Cifras chicas (listas, celdas): mono en negrita, tabulares. */
 .num {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .tnum {
   font-variant-numeric: tabular-nums;
 }
-.eyebrow {
+.amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+}
+
+/* Etiqueta del sistema: mono, MAYUSCULAS, tracking 0.08em. */
+.eyebrow,
+.label {
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
+}
+.label {
+  color: var(--text);
+}
+/* Etiqueta de seccion numerada: "/02 — MOVIMIENTOS". El punto es decorativo. */
+.sec-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.sec-label::before {
+  content: "\25CF\00a0";
+  color: var(--violet);
+}
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--violet);
 }
 .caption {
   font-size: 13px;
   line-height: 18px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-2);
 }
-.amount {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-variant-numeric: tabular-nums;
-  font-size: 16px;
-  line-height: 22px;
-  font-weight: 600;
+/* Titulo entre corchetes: [ GASTO POR CATEGORIA ] */
+.bracket::before {
+  content: "[\00a0";
+  color: var(--text-2);
 }
-.sheet-title {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-size: 20px;
-  line-height: 26px;
-  font-weight: 600;
+.bracket::after {
+  content: "\00a0]";
+  color: var(--text-2);
 }
-/* Firma: cifras redondas como monedas, solo en el Disponible. */
-.num-coin {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-variant-numeric: tabular-nums;
-  font-variation-settings: "SOFT" 100, "opsz" 72;
-  font-weight: 600;
+.link {
+  color: var(--violet);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* ---- Tarjetas: una sola receta ---- */
-.card {
+/* ==========================================================================
+   Superficies
+   ========================================================================== */
+
+/* Tarjeta: una sola receta. Panel sobre paper con borde de control. */
+.card,
+.card-hero {
+  position: relative;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  border: 1.5px solid var(--ink);
   padding: 12px 16px;
 }
 .card-hero {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
   padding: 20px;
-  box-shadow: var(--shadow-soft);
 }
 
-/* donut entrance */
-@keyframes donutIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* Marcas + en las cuatro esquinas (motivo del sistema). .card-hero las trae;
+   .mk se las pone a cualquier bloque con position: relative y borde de 1.5px.
+   Sobresalen 8px: el contenedor necesita ese margen libre (no overflow hidden
+   pegado al borde). */
+.mk {
+  position: relative;
 }
-.donut-in {
-  animation: donutIn 0.4s cubic-bezier(0.2, 0, 0.2, 1) both;
+.mk::before,
+.card-hero::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  --m: linear-gradient(var(--ink), var(--ink));
+  --k: linear-gradient(var(--bg), var(--bg));
+  background:
+    var(--m) 0 5.75px / 13px 1.5px no-repeat,
+    var(--m) 5.75px 0 / 1.5px 13px no-repeat,
+    var(--m) 100% 5.75px / 13px 1.5px no-repeat,
+    var(--m) calc(100% - 5.75px) 0 / 1.5px 13px no-repeat,
+    var(--m) 0 calc(100% - 5.75px) / 13px 1.5px no-repeat,
+    var(--m) 5.75px 100% / 1.5px 13px no-repeat,
+    var(--m) 100% calc(100% - 5.75px) / 13px 1.5px no-repeat,
+    var(--m) calc(100% - 5.75px) 100% / 1.5px 13px no-repeat,
+    var(--k) 0 0 / 13px 13px no-repeat,
+    var(--k) 100% 0 / 13px 13px no-repeat,
+    var(--k) 0 100% / 13px 13px no-repeat,
+    var(--k) 100% 100% / 13px 13px no-repeat;
 }
 
-/* tiny scrollbar */
-.app-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Bloque senal (lima): el Disponible hoy y nada mas. Los tokens de texto se
+   redefinen adentro para que los hijos que usan var(--text) / var(--expense)
+   sigan leyendose en los dos temas (el lima no cambia con el tema). */
+.is-lime {
+  background: var(--lime);
+  color: var(--on-lime);
+  --text: #0a0a0a;
+  --text-2: #0a0a0a;
+  --text-3: #0a0a0a;
+  --line: #0a0a0a;
+  --line-strong: #0a0a0a;
+  --accent-ink: #0a0a0a;
+  --income: #0a0a0a;
+  --expense: #4a23c9;
+  --violet: #4a23c9;
+  --coin-face: #fafaf8;
+  --bg-2: rgba(10, 10, 10, 0.14);
 }
-.app-scroll::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
-  border-radius: 999px;
+.is-lime :is(.eyebrow, .caption) {
+  color: #0a0a0a;
 }
-.app-scroll::-webkit-scrollbar-track {
+
+/* Bloque invertido: seleccion, estado, barra de estado. */
+.is-inv {
+  background: var(--ink);
+  color: var(--paper);
+  --text: var(--paper);
+  --text-2: var(--inv-muted);
+  --text-3: var(--inv-muted);
+  --accent-ink: var(--paper);
+  --income: var(--paper);
+  --expense: var(--inv-violet);
+  --violet: var(--inv-violet);
+  --line: var(--inv-muted);
+}
+.is-inv :is(.eyebrow, .caption) {
+  color: var(--inv-muted);
+}
+
+/* Separadores */
+.rule {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  margin: 0;
+}
+.rule-strong {
+  height: 1.5px;
+  background: var(--ink);
+  border: 0;
+  margin: 0;
+}
+/* Fila de lista: hairline abajo, la ultima sin linea. */
+.row {
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+
+/* Trama: mes parcial, presupuesto cerca del limite, estados vacios. */
+.hatch {
+  background-image: repeating-linear-gradient(45deg, var(--ink) 0 2px, transparent 2px 7px);
+}
+
+/* Punto de estado: lo unico redondo del sistema. */
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  background: var(--violet);
+}
+
+/* Chip / etiqueta de estado */
+.tag {
+  display: inline-block;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text);
+  border: 1.5px solid var(--ink);
+}
+.tag.inv {
+  background: var(--ink);
+  color: var(--paper);
+}
+.tag.v {
+  background: var(--violet);
+  color: var(--on-violet);
+  border-color: var(--violet);
+}
+.tag.lime {
+  background: var(--lime);
+  color: var(--on-lime);
+  border-color: var(--on-lime);
+}
+
+/* Barra de estado del sistema (pie del sidebar, pie de /setup). Solo datos
+   verdaderos: fecha, moneda, estado real de la conexion. */
+.statusbar {
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;
+}
+.statusbar .dot {
+  background: var(--lime);
+  margin-right: 6px;
+}
+
+/* ==========================================================================
+   Controles
+   ========================================================================== */
+
+/* Boton: recto, mono, MAYUSCULAS. Variantes: -primary (tinta, UNA accion
+   principal por pantalla), -accent (violeta: gasto / accion destacada),
+   -ghost (texto). Sin variante = contorno. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text);
   background: transparent;
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.1s, color 0.1s;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-accent {
+  background: var(--violet);
+  color: var(--on-violet);
+  border-color: var(--violet);
+}
+.btn-ghost {
+  border-color: transparent;
+  padding: 0 8px;
+}
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+@media (hover: hover) {
+  .btn:not(:disabled):hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:not(:disabled):hover {
+    background: var(--violet);
+    border-color: var(--violet);
+    color: var(--on-violet);
+  }
+  .btn-accent:not(:disabled):hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
 }
 
-/* icon button */
+/* Selector segmentado (role="radiogroup" con hijos role="radio"): marco de
+   1.5px, opciones separadas por lineas, la elegida invertida. */
+.seg {
+  display: inline-flex;
+  max-width: 100%;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
+}
+.seg > [role="radio"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.seg > [role="radio"]:first-child {
+  border-left: 0;
+}
+.seg > [role="radio"][aria-checked="true"] {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+}
+.seg.stretch {
+  display: flex;
+  width: 100%;
+}
+.seg.stretch > [role="radio"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+/* Campo de texto con borde propio */
+.field {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  outline: none;
+}
+.field::placeholder {
+  color: var(--text-2);
+}
+.field:focus-visible {
+  outline: 3px solid var(--violet);
+  outline-offset: 0;
+}
+
+/* Barra de avance (presupuestos, porcentajes): pista con borde, relleno plano.
+   .near = trama (cerca del limite), .over = tinta llena (superado). */
+.track {
+  position: relative;
+  height: 10px;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
+  overflow: hidden;
+}
+.track > .fill {
+  height: 100%;
+  background: var(--violet);
+}
+.track > .fill.near {
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(45deg, var(--violet) 0 3px, transparent 3px 6px);
+}
+.track > .fill.over {
+  background: var(--ink);
+}
+
+/* icon button: cuadrado, 44x44 */
 .icon-btn {
   width: 44px;
   height: 44px;
-  border-radius: 999px;
   display: grid;
   place-items: center;
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.1s;
   padding: 0;
+  color: var(--text);
 }
-.icon-btn:hover {
-  background: var(--bg-2);
+@media (hover: hover) {
+  .icon-btn:hover {
+    background: var(--bg-2);
+  }
 }
 
-/* fab / key press feedback */
-.fab-btn:hover {
-  filter: brightness(1.05);
-}
+/* Presion: los botones grandes bajan 1px; las teclas de la calculadora se
+   invierten mientras se aprietan. */
 .fab-btn:active {
-  transform: scale(0.94);
-}
-.key-btn:hover {
-  filter: brightness(0.98);
+  transform: translateY(1px);
 }
 .key-btn:active {
-  transform: scale(0.95);
+  background: var(--ink) !important;
+  color: var(--paper) !important;
 }
-.icon-tile:hover {
-  border-color: var(--line-strong);
-}
-.cat-card {
-  transition: border-color 0.15s, background 0.15s;
-}
-.cat-card:hover {
-  border-color: var(--line-strong);
+@media (hover: hover) {
+  .key-btn:hover {
+    background: var(--bg-2);
+  }
+  .icon-tile:hover,
+  .cat-card:hover {
+    background: var(--bg-2);
+  }
 }
 .cat-bubble:active {
-  transform: scale(0.94);
+  transform: translateY(1px);
 }
 
 /* category grid */
@@ -446,7 +801,9 @@ body {
   gap: 10px;
 }
 
-/* modal scrim + sheet */
+/* ==========================================================================
+   Modales
+   ========================================================================== */
 .um-modal-scrim {
   position: absolute;
   inset: 0;
@@ -454,9 +811,9 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(20, 18, 16, 0.42);
+  background: var(--scrim);
   padding: 0;
-  animation: scrimIn 0.18s ease both;
+  animation: scrimIn 0.12s linear both;
   overscroll-behavior: contain;
   touch-action: none;
 }
@@ -472,9 +829,8 @@ body {
   width: 100%;
   max-width: 100%;
   background: var(--surface);
-  border-radius: 22px 22px 0 0;
-  box-shadow: var(--shadow-modal);
-  animation: sheetIn 0.26s cubic-bezier(0.2, 0, 0.2, 1) both;
+  border-top: 1.5px solid var(--ink);
+  animation: sheetIn 0.16s cubic-bezier(0.2, 0, 0.2, 1) both;
   overflow: hidden;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -483,7 +839,7 @@ body {
 }
 @keyframes sheetIn {
   from {
-    transform: translateY(28px);
+    transform: translateY(20px);
     opacity: 0.6;
   }
   to {
@@ -492,19 +848,32 @@ body {
   }
 }
 
-/* skeletons */
+/* desktop sheet → panel centrado con marco completo */
+@media (min-width: 761px) {
+  .desktop .um-modal-scrim {
+    align-items: center;
+    padding: 24px;
+  }
+  .desktop .um-sheet {
+    border: 1.5px solid var(--ink);
+    max-height: 90vh;
+  }
+}
+
+/* ==========================================================================
+   Estados de carga, entrada del grafico, scrollbar
+   ========================================================================== */
 .skeleton-donut {
   width: 180px;
   height: 180px;
-  border-radius: 50%;
-  background: var(--bg-2);
-  box-shadow: inset 0 0 0 26px var(--surface), inset 0 0 0 28px var(--line);
+  border: 1.5px solid var(--line);
+  background-image: repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 9px);
   animation: pulse 1.3s ease-in-out infinite;
 }
 .skeleton-row {
   height: 44px;
-  border-radius: 12px;
-  background: var(--bg-2);
+  background-color: var(--bg-2);
+  background-image: repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 9px);
   animation: pulse 1.3s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -517,19 +886,30 @@ body {
   }
 }
 
-/* desktop sheet → centered card */
-@media (min-width: 761px) {
-  .desktop .um-modal-scrim {
-    align-items: center;
-    padding: 24px;
+@keyframes donutIn {
+  from {
+    opacity: 0;
   }
-  .desktop .um-sheet {
-    border-radius: 22px;
-    max-height: 90vh;
+  to {
+    opacity: 1;
   }
 }
+.donut-in {
+  animation: donutIn 0.2s linear both;
+}
 
-/* Movimiento opcional: sin animaciones automáticas ni escalas. */
+.app-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.app-scroll::-webkit-scrollbar-thumb {
+  background: var(--line);
+}
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Movimiento opcional: sin animaciones automaticas ni desplazamientos. */
 @media (prefers-reduced-motion: reduce) {
   .donut-in,
   .skeleton-donut,
@@ -537,10 +917,10 @@ body {
     animation: none;
   }
   .um-sheet {
-    animation: scrimIn 0.18s ease both;
+    animation: scrimIn 0.12s linear both;
   }
+  .btn:active,
   .fab-btn:active,
-  .key-btn:active,
   .cat-bubble:active {
     transform: none;
   }

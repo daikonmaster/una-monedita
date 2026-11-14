@@ -1,20 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Geist_Mono, Fraunces } from "next/font/google";
+import { Anton, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-app",
-});
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
-// Variable con ejes SOFT/opsz: la firma (.num-coin) usa cifras redondas y el
-// navegador no sintetiza negritas.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  axes: ["SOFT", "opsz"],
-  variable: "--font-serif",
-});
+// Anton: solo titulares y cifras grandes (.display). JetBrains Mono: toda la UI.
+const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
+const jetbrains = JetBrains_Mono({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-jb" });
 
 export const metadata: Metadata = {
   title: "UnaMonedita · Finanzas personales",
@@ -32,8 +22,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f3ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#171614" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f2ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0d" },
   ],
 };
 
@@ -50,7 +40,7 @@ export default function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${nunito.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${anton.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />

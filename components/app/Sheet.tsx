@@ -129,7 +129,7 @@ export function Sheet({
   );
 }
 
-// Cabecera estándar: título (Fraunces 20/600), "‹ Volver" opcional y cerrar (44×44).
+// Cabecera estándar: título (.sheet-title, Anton 28), "‹ Volver" opcional y cerrar (44×44).
 export function SheetHeader({
   title,
   onClose,
@@ -144,7 +144,7 @@ export function SheetHeader({
   id?: string;
 }) {
   return (
-    <div style={{ padding: "12px 12px 4px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flex: "0 0 auto" }}>
+    <div style={{ padding: "8px 4px 8px 16px", borderBottom: "1.5px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flex: "0 0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
         {onBack && (
           <button className="icon-btn" onClick={onBack} aria-label={backLabel ?? "Volver"} style={{ marginLeft: -12 }}>
@@ -161,7 +161,7 @@ export function SheetHeader({
 }
 
 // Confirmación destructiva dentro del propio sheet (sin diálogos del navegador):
-// pregunta, aclara y ofrece [Cancelar] / [acción] con la acción en rojo.
+// pregunta, aclara y ofrece [Cancelar] / [acción] con la acción en violeta.
 // "Cancelar" lleva data-autofocus: el Sheet le pasa el foco al aparecer.
 export function ConfirmRow({
   question,
@@ -180,21 +180,13 @@ export function ConfirmRow({
 }) {
   return (
     <div role="alertdialog" aria-label={question} style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "center", padding: "4px 0" }}>
-      <div style={{ fontWeight: 800, fontSize: 16 }}>{question}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 15, textTransform: "uppercase", letterSpacing: "0.08em" }}>{question}</div>
       <div className="caption">{detail}</div>
       <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-        <button
-          onClick={onCancel}
-          data-autofocus
-          style={{ flex: 1, minHeight: 48, borderRadius: 12, border: "1.5px solid var(--line)", background: "var(--surface)", color: "var(--text-2)", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}
-        >
+        <button onClick={onCancel} data-autofocus className="btn" style={{ flex: 1, minHeight: 48 }}>
           Cancelar
         </button>
-        <button
-          onClick={onConfirm}
-          disabled={busy}
-          style={{ flex: 1, minHeight: 48, borderRadius: 12, border: "none", background: "var(--expense-fill)", color: "var(--on-expense)", fontWeight: 800, fontSize: 15, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.7 : 1, fontFamily: "inherit" }}
-        >
+        <button onClick={onConfirm} disabled={busy} className="btn btn-accent" style={{ flex: 1, minHeight: 48 }}>
           {confirmLabel}
         </button>
       </div>

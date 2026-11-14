@@ -16,7 +16,7 @@ export function Donut({
   segments,
   size = 240,
   thickness = 26,
-  gap = 2.5,
+  gap = 3,
   children,
   onSegment,
   activeCat,
@@ -31,7 +31,8 @@ export function Donut({
   activeCat?: string | null;
   label?: string;
 }) {
-  const r = (size - thickness) / 2;
+  // r deja lugar al segmento activo (+4px) y al contorno exterior de 1.5px dentro del SVG
+  const r = (size - thickness) / 2 - 3;
   const cx = size / 2;
   const cy = size / 2;
   const C = 2 * Math.PI * r;
@@ -50,7 +51,7 @@ export function Donut({
         fill="none"
         stroke={seg.color}
         strokeWidth={activeCat === seg.cat ? thickness + 4 : thickness}
-        strokeLinecap="round"
+        strokeLinecap="butt"
         strokeDasharray={`${len} ${C - len}`}
         strokeDashoffset={-offsetAt(i)}
         onClick={onSegment ? () => onSegment(seg.cat) : undefined}
@@ -77,6 +78,9 @@ export function Donut({
       >
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--bg-2)" strokeWidth={thickness} />
         {arcs}
+        {/* Contornos de plano tecnico, encima de los arcos y sin interaccion */}
+        <circle cx={cx} cy={cy} r={r + thickness / 2} fill="none" stroke="var(--ink)" strokeWidth={1.5} style={{ pointerEvents: "none" }} />
+        <circle cx={cx} cy={cy} r={r - thickness / 2} fill="none" stroke="var(--ink)" strokeWidth={1.5} style={{ pointerEvents: "none" }} />
       </svg>
       {children != null && (
         <div

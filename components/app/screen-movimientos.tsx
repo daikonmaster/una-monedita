@@ -20,11 +20,13 @@ function Row({ x, cat }: { x: UITx; cat: UICategory }) {
   return (
     <button
       onClick={() => openEdit(x)}
+      className="row"
       style={{
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "9px 4px",
+        padding: "12px 16px",
+        minHeight: 44,
         width: "100%",
         border: "none",
         background: "transparent",
@@ -33,15 +35,15 @@ function Row({ x, cat }: { x: UITx; cat: UICategory }) {
         textAlign: "left",
       }}
     >
-      <div style={{ width: 7, height: 7, borderRadius: 999, background: cat.color, flex: "0 0 auto" }} />
+      <span className="dot" style={{ background: cat.color }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text)" }}>{x.note || cat.name}</div>
-        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>
+        <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text)" }}>{x.note || cat.name}</div>
+        <div className="caption" style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {fmtDate(x.date)}
           {!inc && x.pay && ` · ${x.pay}`}
         </div>
       </div>
-      <span className="num tnum" style={{ fontSize: 14, fontWeight: 600, color: inc ? "var(--income)" : "var(--text)" }}>
+      <span className="amount" style={{ flex: "0 0 auto", whiteSpace: "nowrap", fontSize: 14, color: inc ? "var(--income)" : "var(--expense)" }}>
         {inc ? "+ " : "− "}
         {fmt(x.amount, currency)}
       </span>
@@ -66,13 +68,23 @@ const BUDGET_STATUS: Record<BudgetLevel, string> = {
 function BudgetBlock({ spent, budget }: { spent: number; budget: UIBudget }) {
   const { ratio, level } = budgetState(spent, budget.limit, budget.alertAt80);
   return (
-    <div style={{ padding: "0 2px 10px" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 5 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)" }}>Presupuesto</span>
-        <span style={{ fontSize: 13, fontWeight: 600 }}>
-          <BudgetAmount spent={spent} limit={budget.limit} level={level} />
-          <span className="sr-only">, {BUDGET_STATUS[level]}</span>
-        </span>
+    <div style={{ padding: "12px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+        <span className="eyebrow">Presupuesto</span>
+        {level === "over" && (
+          <span className="tag inv" aria-hidden="true">
+            Superado
+          </span>
+        )}
+        {level === "near" && (
+          <span className="tag" aria-hidden="true">
+            Cerca
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>
+        <BudgetAmount spent={spent} limit={budget.limit} level={level} />
+        <span className="sr-only">, {BUDGET_STATUS[level]}</span>
       </div>
       <BudgetBar ratio={ratio} level={level} />
     </div>
@@ -85,40 +97,49 @@ function GroupCard({ g, budget }: { g: Group; budget?: UIBudget }) {
   // categoría con presupuesto pero sin gasto en el mes: se muestra igual (con su
   // barra en cero) pero no hay nada que desplegar
   const empty = g.items.length === 0;
-  const headStyle = { display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", width: "100%", textAlign: "left" } as const;
+  const headStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "12px 16px",
+    minHeight: 44,
+    width: "100%",
+    textAlign: "left",
+    borderBottom: open ? "1.5px solid var(--ink)" : "none",
+  } as const;
   const head = (
     <>
-      <CatBubble icon={g.cat.icon} color={g.cat.color} size={42} stroke={2} />
+      <CatBubble icon={g.cat.icon} color={g.cat.color} size={40} stroke={1.75} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>{g.cat.name}</div>
-        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.cat.name}</div>
+        <div className="caption" style={{ fontSize: 12 }}>
           {empty ? "Sin movimientos" : `${g.items.length} ${g.items.length === 1 ? "movimiento" : "movimientos"}`}
         </div>
       </div>
-      <div style={{ textAlign: "right" }}>
-        <div className="num tnum" style={{ fontWeight: 600, fontSize: 15, color: g.cat.type === "income" ? "var(--income)" : "var(--text)" }}>
+      <div style={{ textAlign: "right", flex: "0 0 auto" }}>
+        <div className="amount" style={{ whiteSpace: "nowrap", color: g.cat.type === "income" ? "var(--income)" : "var(--expense)" }}>
           {g.cat.type === "income" ? "+ " : "− "}
           {fmt(g.total, currency)}
         </div>
       </div>
-      {!empty && <Icon name={open ? "ChevronUp" : "ChevronDown"} size={18} stroke={2.2} color="var(--text-3)" />}
+      {!empty && <Icon name={open ? "ChevronUp" : "ChevronDown"} size={18} stroke={1.75} color="var(--text-2)" />}
     </>
   );
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 16, padding: "6px 14px", border: "1px solid var(--line)" }}>
+    <div className="card" style={{ padding: 0 }}>
       {empty ? (
         <div style={headStyle}>{head}</div>
       ) : (
         <button
           onClick={() => setOpen((o) => !o)}
-          style={{ ...headStyle, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
+          style={{ ...headStyle, border: "none", borderBottom: headStyle.borderBottom, background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
         >
           {head}
         </button>
       )}
       {budget && <BudgetBlock spent={g.total} budget={budget} />}
       {open && (
-        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 2, marginTop: 2 }}>
+        <div style={{ borderTop: budget ? "1px solid var(--line)" : "none" }}>
           {g.items
             .slice()
             .sort((a, b) => b.date.getTime() - a.date.getTime())
@@ -157,28 +178,25 @@ function FilterChips() {
   if (pieces.length === 0) return null;
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7, margin: "0 2px 12px" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 16px" }}>
       {pieces.map((p) => (
         <button
           key={p.key}
           onClick={p.onRemove}
+          className="tag"
           style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            gap: 5,
-            padding: "6px 8px 6px 12px",
-            borderRadius: 999,
-            border: "1px solid var(--line)",
+            gap: 8,
+            minHeight: 44,
+            maxWidth: "100%",
             background: "var(--surface)",
-            color: "var(--text-2)",
-            fontWeight: 700,
-            fontSize: 12.5,
             cursor: "pointer",
             fontFamily: "inherit",
           }}
         >
           {p.label}
-          <Icon name="X" size={13} stroke={2.6} color="var(--text-3)" />
+          <Icon name="X" size={14} stroke={1.75} color="var(--text)" />
         </button>
       ))}
     </div>
@@ -199,34 +217,21 @@ export function Movimientos() {
   const budgetFor = (catId: string) => (showBudgets ? budgets.find((b) => b.categoryId === catId && b.limit > 0) : undefined);
 
   const header = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 2px 12px" }}>
-      <div style={{ flex: 1 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0 16px" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <RangeNav center={false} />
       </div>
       <button
         onClick={() => setFiltrosOpen(true)}
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "9px 14px",
-          borderRadius: 999,
-          border: "1.5px solid var(--line)",
-          background: filterCount > 0 ? "var(--accent-soft)" : "var(--surface)",
-          color: filterCount > 0 ? "var(--accent-ink)" : "var(--text-2)",
-          fontWeight: 800,
-          fontSize: 13.5,
-          cursor: "pointer",
-          fontFamily: "inherit",
-        }}
+        className={filterCount > 0 ? "btn btn-primary" : "btn"}
+        style={{ position: "relative", padding: "0 12px", flex: "0 0 auto" }}
       >
-        <Icon name="SlidersHorizontal" size={16} stroke={2.4} color={filterCount > 0 ? "var(--accent-ink)" : "var(--text-2)"} />
+        <Icon name="SlidersHorizontal" size={16} stroke={1.75} color={filterCount > 0 ? "var(--paper)" : "var(--text)"} />
         Filtros
         {filterCount > 0 && (
           <span
             className="num tnum"
-            style={{ minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999, background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}
+            style={{ minWidth: 18, height: 18, padding: "0 4px", background: "var(--paper)", color: "var(--ink)", fontSize: 11, display: "grid", placeItems: "center" }}
           >
             {filterCount}
           </span>
@@ -303,32 +308,23 @@ export function Movimientos() {
     <div className="app-scroll" style={{ height: "100%", overflowY: "auto", padding: "4px 16px 24px" }}>
       {header}
       <FilterChips />
-      <div style={{ display: "flex", gap: 10, margin: "6px 2px 16px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 16px" }}>
         {txFilter.type !== "all" ? (
-          <div
-            style={{
-              flex: 1,
-              background: txFilter.type === "income" ? "var(--income-soft)" : "var(--expense-soft)",
-              borderRadius: 14,
-              padding: "12px 14px",
-            }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: txFilter.type === "income" ? "var(--income)" : "var(--expense)" }}>
-              {txFilter.type === "income" ? "Ingresos" : "Gastos"}
-            </div>
-            <div className="num tnum" style={{ fontSize: 18, fontWeight: 600, color: txFilter.type === "income" ? "var(--income)" : "var(--expense)", marginTop: 2 }}>
+          <div className="card" style={{ flex: "1 1 140px", minWidth: 0 }}>
+            <div className="eyebrow">{txFilter.type === "income" ? "Ingresos" : "Gastos"}</div>
+            <div className="display" style={{ fontSize: 22, marginTop: 4, color: txFilter.type === "income" ? "var(--income)" : "var(--expense)" }}>
               {fmt(txFilter.type === "income" ? filteredTotals.income : filteredTotals.expense, currency)}
             </div>
           </div>
         ) : (
           <>
-            <div style={{ flex: 1, background: "var(--income-soft)", borderRadius: 14, padding: "12px 14px" }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--income)" }}>Ingresos</div>
-              <div className="num tnum" style={{ fontSize: 18, fontWeight: 600, color: "var(--income)", marginTop: 2 }}>{fmt(filteredTotals.income, currency)}</div>
+            <div className="card" style={{ flex: "1 1 140px", minWidth: 0 }}>
+              <div className="eyebrow">Ingresos</div>
+              <div className="display" style={{ fontSize: 22, marginTop: 4, color: "var(--income)" }}>{fmt(filteredTotals.income, currency)}</div>
             </div>
-            <div style={{ flex: 1, background: "var(--expense-soft)", borderRadius: 14, padding: "12px 14px" }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--expense)" }}>Gastos</div>
-              <div className="num tnum" style={{ fontSize: 18, fontWeight: 600, color: "var(--expense)", marginTop: 2 }}>{fmt(filteredTotals.expense, currency)}</div>
+            <div className="card" style={{ flex: "1 1 140px", minWidth: 0 }}>
+              <div className="eyebrow">Gastos</div>
+              <div className="display" style={{ fontSize: 22, marginTop: 4, color: "var(--expense)" }}>{fmt(filteredTotals.expense, currency)}</div>
             </div>
           </>
         )}
@@ -337,11 +333,11 @@ export function Movimientos() {
       {flat ? (
         <>
           {flatBudget && (
-            <div style={{ background: "var(--surface)", borderRadius: 16, padding: "12px 14px 2px", border: "1px solid var(--line)", marginBottom: 10 }}>
+            <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               <BudgetBlock spent={filteredTotals.expense} budget={flatBudget} />
             </div>
           )}
-          <div style={{ background: "var(--surface)", borderRadius: 16, padding: "6px 14px", border: "1px solid var(--line)" }}>
+          <div className="card" style={{ padding: 0 }}>
             {flatList.map((x) => {
               const c = x.cat ? byId[x.cat] : undefined;
               if (!c) return null;
@@ -350,7 +346,7 @@ export function Movimientos() {
           </div>
         </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {list.map((g) => (
             <GroupCard key={g.cat.id} g={g} budget={g.cat.type === "expense" ? budgetFor(g.cat.id) : undefined} />
           ))}

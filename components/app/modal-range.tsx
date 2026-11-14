@@ -15,14 +15,8 @@ import {
 const inputStyle: CSSProperties = {
   flex: 1,
   minWidth: 0,
-  border: "1px solid var(--line)",
-  background: "var(--bg-2)",
-  borderRadius: 12,
-  padding: "12px 14px",
-  fontFamily: "inherit",
-  fontSize: 16,
+  padding: "10px 8px",
   fontWeight: 700,
-  color: "var(--text)",
 };
 
 function shortcuts(): { label: string; range: DateRange }[] {
@@ -66,7 +60,7 @@ export function RangePicker({ onDone }: { onDone: () => void }) {
         padding: "8px 20px calc(20px + env(safe-area-inset-bottom))",
         display: "flex",
         flexDirection: "column",
-        gap: 18,
+        gap: 24,
         flex: 1,
         minHeight: 0,
         overflowY: "auto",
@@ -75,22 +69,25 @@ export function RangePicker({ onDone }: { onDone: () => void }) {
       }}
     >
       <div>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>Atajos</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {shortcuts().map((s) => (
+        <div className="eyebrow bracket" style={{ marginBottom: 8 }}>Atajos</div>
+        <div className="card" style={{ padding: 0 }}>
+          {shortcuts().map((s, i) => (
             <button
               key={s.label}
               type="button"
               onClick={() => apply(s.range)}
               style={{
-                padding: "10px 14px",
-                minHeight: 40,
-                borderRadius: 999,
-                border: "1.5px solid var(--line)",
-                background: "var(--surface)",
-                color: "var(--text-2)",
-                fontWeight: 700,
+                display: "block",
+                width: "100%",
+                minHeight: 44,
+                padding: "0 16px",
+                border: "none",
+                borderTop: i === 0 ? "none" : "1px solid var(--line)",
+                background: "transparent",
+                color: "var(--text)",
+                fontWeight: 500,
                 fontSize: 13,
+                textAlign: "left",
                 cursor: "pointer",
                 fontFamily: "inherit",
               }}
@@ -102,18 +99,15 @@ export function RangePicker({ onDone }: { onDone: () => void }) {
       </div>
 
       <div>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>Rango personalizado</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <input type="date" aria-label="Desde" value={start} onChange={(e) => setStart(e.target.value)} style={inputStyle} />
-          <span style={{ color: "var(--text-3)", fontWeight: 700 }} aria-hidden="true">–</span>
-          <input type="date" aria-label="Hasta" value={end} onChange={(e) => setEnd(e.target.value)} style={inputStyle} />
+        <div className="eyebrow bracket" style={{ marginBottom: 8 }}>Rango personalizado</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="date" aria-label="Desde" className="field" value={start} onChange={(e) => setStart(e.target.value)} style={inputStyle} />
+          <span style={{ color: "var(--text-2)", fontWeight: 700 }} aria-hidden="true">–</span>
+          <input type="date" aria-label="Hasta" className="field" value={end} onChange={(e) => setEnd(e.target.value)} style={inputStyle} />
         </div>
       </div>
 
-      <button
-        onClick={applyCustom}
-        style={{ padding: "14px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "inherit", background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 15 }}
-      >
+      <button onClick={applyCustom} className="btn btn-primary btn-block">
         Aplicar
       </button>
     </div>

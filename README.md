@@ -12,7 +12,7 @@ App de finanzas personales conectada a Notion. Registrás gastos e ingresos en m
 
 - **Next.js 16** (App Router, Turbopack), React 19, TypeScript, pnpm
 - **Tailwind v4** con tokens CSS propios (`app/globals.css`); casi todo el estilo es inline sobre esos tokens
-- **Fuentes:** Nunito (UI), Fraunces (números), Geist Mono
+- **Diseño:** sistema cyber brutalista "Franco Recabarren" (origen en Claude Design; `app/globals.css` es su traducción). Fuentes: JetBrains Mono (toda la UI) y Anton (titulares y cifras grandes). Radio 0, sin sombras ni degradados, grilla de 40px, seleccionado = invertido, mayúsculas por CSS
 - **lucide-react**: iconos, registro explícito de ~180 en `lib/icon-registry.ts`
 - **@notionhq/client v5** + helpers REST (`lib/notion/client.ts`): Notion como base de datos, solo del lado del servidor
 - **jose**: cookie cifrada (JWE) con la conexión a Notion
@@ -111,7 +111,7 @@ Cada cambio llega a todos los forks, así que:
 
 ## Pantallas y funcionalidades
 
-SPA estilo Monefy con navegación interna (sin cambio de ruta). Móvil: barra inferior con 5 pestañas. Desktop (>760px): sidebar con las 6 pantallas y los botones **Agregar gasto / ingreso** (atajos `g` / `i`).
+SPA con navegación interna (sin cambio de ruta). Móvil: barra inferior con 5 pestañas. Desktop (>760px): sidebar con las 6 pantallas y los botones **Agregar gasto / ingreso** (atajos `g` / `i`).
 
 | Pantalla | Qué hace |
 |----------|----------|
@@ -120,21 +120,21 @@ SPA estilo Monefy con navegación interna (sin cambio de ruta). Móvil: barra in
 | **Calendario** | Grilla mensual con totales por día, detalle del día, balance del mes y saldo al cierre |
 | **Fijos** | Gastos e ingresos recurrentes, con ✓ para registrar cada pago y contador mensual |
 | **Categorías** | CRUD, tienda de iconos y colores, presupuesto mensual por categoría de gasto |
-| **Ajustes** | Moneda, saldo, tema, color, estilo del resumen, Notion y mantenimiento |
+| **Ajustes** | Moneda, saldo, tema, estilo del resumen, Notion y mantenimiento |
 
 ### Resumen
 
 - **Disponible hoy** (barra inferior en el móvil, tarjeta en desktop): toda tu plata, acumulada. Es el saldo inicial más todo lo registrado hasta hoy. **No depende del período que estés mirando** ni cambia al pasar de mes: tenés 1000, gastás 100 → 900, cobrás 400 → 1300, cambia el mes → sigue 1300. Tocarlo abre **Tu saldo** (cuenta del período y desglose por día / semana / mes).
 - **Tira del período:** Ingresos, Gastos y Balance (ingresos − gastos) del día, semana, mes, año o rango personalizado. Ingresos y Gastos son también el selector de lo que muestra el donut.
 - **Donut:** gastos o ingresos por categoría. La cifra del centro se ajusta al hueco del anillo (montos de 4+ cifras no se montan sobre el aro). Tres estilos de lista en el móvil: Anillo, Leyenda, Grilla.
-- **Presupuestos:** si el rango es un mes completo, cada categoría de gasto con presupuesto muestra gasto vs límite ("€ 6 de € 30"). Solo el límite lleva color, para distinguirlo del gasto: verde mientras vas bien, ámbar desde el 80% (si el presupuesto tiene el aviso al 80%) y rojo al superarlo; la barra toma el mismo color.
+- **Presupuestos:** si el rango es un mes completo, cada categoría de gasto con presupuesto muestra gasto vs límite ("€ 6 de € 30"). Solo el límite se marca, para distinguirlo del gasto: barra violeta mientras vas bien, barra con trama y límite en violeta desde el 80% (si el presupuesto tiene el aviso al 80%), y barra de tinta llena con el límite invertido al superarlo.
 - Navegación `‹ ›` por período; tocar la etiqueta abre el selector de rango.
 
 ### Movimientos
 
 - Agrupados por categoría (con una sola categoría filtrada, lista plana por fecha). Tocar un movimiento lo edita.
 - **Calculadora del monto** con tecla "=" (también "=" y Enter del teclado resuelven la cuenta), decimales con coma en cualquier operando y resta con "−".
-- **Presupuestos:** con el rango en un mes completo (y sin filtrar solo ingresos), cada categoría de gasto con presupuesto muestra siempre, abierta o cerrada, su avance: "Presupuesto € 6 de € 30" con barra y los mismos colores que el Resumen. Las categorías con presupuesto pero sin gastos en el mes también aparecen ("Sin movimientos", en cero). En otros rangos (semana, año, personalizado) no se muestran.
+- **Presupuestos:** con el rango en un mes completo (y sin filtrar solo ingresos), cada categoría de gasto con presupuesto muestra siempre, abierta o cerrada, su avance: "Presupuesto € 6 de € 30" con barra y los mismos estados que el Resumen. Las categorías con presupuesto pero sin gastos en el mes también aparecen ("Sin movimientos", en cero). En otros rangos (semana, año, personalizado) no se muestran.
 - **Cómo se pagó:** al cargar un gasto se elige Efectivo, Bizum, Débito o Crédito (opcional; solo gastos, no ingresos). Viene preseleccionado el último que usaste en ese dispositivo, y la lista lo muestra junto a la fecha ("12 oct · Bizum"). Se guarda en la propiedad `PaymentMethod` de Transactions, que la app crea sola en tu Notion.
 
 ### Fijos
@@ -145,7 +145,7 @@ Lista de gastos e ingresos fijos (alquiler, suscripciones, sueldo). Cada fila di
 
 - **Moneda** para nuevos movimientos (€ / $ / US$).
 - **Saldo: "¿Cuánta plata tenés hoy? (efectivo + banco)".** Escribís lo que tenés y la app calcula el saldo inicial para que el Disponible de hoy sea exactamente eso. Desde ahí cada gasto resta y cada ingreso suma.
-- **Tema:** automático, claro u oscuro. **Color:** Verde, Turquesa o **Grafito** (escala de grises; ingresos en verde, gastos en rojo y categorías conservan su color).
+- **Tema:** automático, claro u oscuro. Un solo acento: los ingresos van en tinta, los gastos y el acento en violeta, el lima marca solo el Disponible hoy, y las categorías conservan su color.
 - **Estilo del resumen** en el móvil.
 - **Notion:** estado, cambiar de cuenta, desconectar.
 - **Mantenimiento:** *Preparar Notion* (agrega las propiedades que falten: las de Subscriptions y `PaymentMethod` en Transactions; esto ya se hace solo al conectar en `/setup`, así que el botón queda como respaldo para conexiones viejas) y *Publicar guía para agentes* (publica `docs/NOTION-SCHEMA.md` en tu Notion, con los IDs de tus bases en lugar de los de ejemplo).
@@ -294,8 +294,8 @@ app/
   setup/                # Conectar Notion: page.tsx (servidor) + setup-form.tsx (cliente)
   api/                  # setup, me, transactions, accounts, categories, subscriptions,
                         # budgets, notion/guide, seed
-  globals.css           # Design system: tokens CSS, temas, acentos (verde/teal/grafito)
-  layout.tsx            # Fuentes, metadata, script de tema antes del primer paint
+  globals.css           # Design system: tokens CSS, temas claro/oscuro, clases del sistema
+  layout.tsx            # Fuentes (JetBrains Mono, Anton), metadata, script de tema antes del primer paint
   manifest.ts           # PWA manifest
 
 components/app/

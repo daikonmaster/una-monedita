@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useStore, failureText, type UISub, type TxType, type NewSubInput } from "./store";
 import { CatBubble, Icon } from "./Icon";
 import { Sheet, SheetHeader, ConfirmRow } from "./Sheet";
@@ -35,13 +35,15 @@ function FreqPills({ value, onChange }: { value: Frequency; onChange: (v: Freque
             type="button"
             onClick={() => onChange(o.value)}
             style={{
-              padding: "8px 14px",
-              borderRadius: 999,
-              border: on ? "1.5px solid var(--accent)" : "1.5px solid var(--line)",
-              background: on ? "var(--accent-soft)" : "var(--surface)",
-              color: on ? "var(--accent-ink)" : "var(--text-2)",
-              fontWeight: 700,
-              fontSize: 13,
+              minHeight: 40,
+              padding: "0 12px",
+              border: "1.5px solid var(--ink)",
+              background: on ? "var(--ink)" : "var(--surface)",
+              color: on ? "var(--paper)" : "var(--text)",
+              fontWeight: on ? 700 : 500,
+              fontSize: 12,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
               cursor: "pointer",
               fontFamily: "inherit",
             }}
@@ -63,17 +65,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-const inputStyle: CSSProperties = {
-  width: "100%",
-  border: "1px solid var(--line)",
-  background: "var(--bg-2)",
-  borderRadius: 12,
-  padding: "12px 14px",
-  fontFamily: "inherit",
-  fontSize: 16,
-  fontWeight: 700,
-  color: "var(--text)",
-};
 
 export function SubEditor({
   initial,
@@ -179,10 +170,10 @@ export function SubEditor({
         <div
           className="app-scroll"
           style={{
-            padding: "8px 20px calc(20px + env(safe-area-inset-bottom))",
+            padding: "8px 16px calc(16px + env(safe-area-inset-bottom))",
             display: "flex",
             flexDirection: "column",
-            gap: 18,
+            gap: 16,
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
@@ -203,16 +194,16 @@ export function SubEditor({
           </Field>
 
           <Field label="Nombre">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Gimnasio, Claude, dominio…" style={inputStyle} />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Gimnasio, Claude, dominio…" className="field" />
           </Field>
 
           <Field label="Monto">
-            <input type="number" inputMode="decimal" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" style={inputStyle} />
+            <input type="number" inputMode="decimal" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="field" />
           </Field>
 
           {cats.length > 0 && (
             <Field label="Categoría">
-              <div className="cat-grid">
+              <div className="cat-grid" style={{ gap: 8 }}>
                 {cats.map((c) => (
                   <button
                     key={c.id}
@@ -224,16 +215,17 @@ export function SubEditor({
                       flexDirection: "column",
                       alignItems: "center",
                       gap: 8,
-                      padding: "14px 6px",
-                      borderRadius: 16,
-                      background: catId === c.id ? `color-mix(in srgb, ${c.color} 14%, var(--surface))` : "var(--surface)",
-                      border: catId === c.id ? `2px solid ${c.color}` : "1px solid var(--line)",
+                      padding: "16px 8px",
+                      minWidth: 0,
+                      background: "var(--surface)",
+                      border: "1.5px solid var(--ink)",
+                      outline: catId === c.id ? "3px solid var(--violet)" : "none",
                       cursor: "pointer",
                       fontFamily: "inherit",
                     }}
                   >
-                    <CatBubble icon={c.icon} color={c.color} size={44} stroke={2} active={catId === c.id} />
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <CatBubble icon={c.icon} color={c.color} size={44} stroke={1.75} active={catId === c.id} />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text)", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {c.name}
                     </span>
                   </button>
@@ -248,14 +240,14 @@ export function SubEditor({
 
           {frequency === "Personalizada" && (
             <Field label="Cada cuántos días">
-              <input type="number" min={1} value={customIntervalDays} onChange={(e) => setCustomIntervalDays(e.target.value)} style={inputStyle} />
+              <input type="number" min={1} value={customIntervalDays} onChange={(e) => setCustomIntervalDays(e.target.value)} className="field" />
             </Field>
           )}
 
           {HAS_DUE_DAY.includes(frequency) && (
             <Field label="Día del mes (aprox.)">
-              <input type="number" min={1} max={31} value={dueDay} onChange={(e) => handleDueDayChange(e.target.value)} placeholder="Ej: 14" style={inputStyle} />
-              <div style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.4 }}>
+              <input type="number" min={1} max={31} value={dueDay} onChange={(e) => handleDueDayChange(e.target.value)} placeholder="Ej: 14" className="field" />
+              <div className="caption">
                 Si el mes no tiene ese día (ej. 31 en febrero), vence el último día del mes.
               </div>
             </Field>
@@ -264,15 +256,15 @@ export function SubEditor({
           {existing && (
             <Field label="Pagos registrados">
               {payments.length === 0 ? (
-                <div style={{ fontSize: 13, color: "var(--text-3)", lineHeight: 1.4 }}>
+                <div className="caption">
                   Todavía no registraste pagos. Tocá ✓ en la lista el día que pagues o te debiten.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="card" style={{ padding: 0 }}>
                   {payments.slice(0, 5).map((p) => (
-                    <div key={p.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 12px", borderRadius: 10, background: "var(--bg-2)", fontSize: 13.5, fontWeight: 600, color: "var(--text-2)" }}>
+                    <div key={p.id} className="row" style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "8px 16px", fontSize: 13, fontWeight: 500, color: "var(--text-2)" }}>
                       <span>{p.date.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</span>
-                      <span className="tnum" style={{ color: "var(--text)", fontWeight: 700 }}>{fmt(p.amount, existing.currency)}</span>
+                      <span className="amount" style={{ color: "var(--text)" }}>{fmt(p.amount, existing.currency)}</span>
                     </div>
                   ))}
                 </div>
@@ -281,7 +273,7 @@ export function SubEditor({
           )}
 
           {error && (
-            <div role="alert" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--expense)", lineHeight: 1.4 }}>
+            <div role="alert" style={{ fontSize: 13, fontWeight: 700, color: "var(--expense)", lineHeight: 1.4 }}>
               {error}
             </div>
           )}
@@ -295,35 +287,31 @@ export function SubEditor({
               onConfirm={remove}
             />
           ) : (
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             {existing && (
               <>
                 <button
                   onClick={() => setConfirmDelete(true)}
                   disabled={busy}
                   className="icon-btn"
-                  style={{ width: 48, height: 48, borderRadius: 12, background: "var(--expense-soft)", flex: "0 0 auto" }}
+                  style={{ width: 48, height: 48, border: "1.5px solid var(--ink)", flex: "0 0 auto" }}
                   aria-label="Eliminar"
                 >
-                  <Icon name="Trash2" size={20} stroke={2} color="var(--expense)" />
+                  <Icon name="Trash2" size={20} stroke={1.75} color="var(--expense)" />
                 </button>
                 <button
                   onClick={togglePause}
                   disabled={busy}
                   className="icon-btn"
-                  style={{ width: 48, height: 48, borderRadius: 12, background: "var(--bg-2)", flex: "0 0 auto" }}
+                  style={{ width: 48, height: 48, border: "1.5px solid var(--ink)", flex: "0 0 auto" }}
                   aria-label={existing.status === "Pausada" ? "Reanudar" : "Pausar"}
                   title={existing.status === "Pausada" ? "Reanudar" : "Pausar"}
                 >
-                  <Icon name={existing.status === "Pausada" ? "PlayCircle" : "PauseCircle"} size={20} stroke={2} color="var(--text-2)" />
+                  <Icon name={existing.status === "Pausada" ? "PlayCircle" : "PauseCircle"} size={20} stroke={1.75} color="var(--text)" />
                 </button>
               </>
             )}
-            <button
-              onClick={save}
-              disabled={busy}
-              style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 15, opacity: busy ? 0.7 : 1 }}
-            >
+            <button onClick={save} disabled={busy} className="btn btn-primary" style={{ flex: 1, minHeight: 48 }}>
               {isNew ? "Crear fijo" : "Guardar cambios"}
             </button>
           </div>

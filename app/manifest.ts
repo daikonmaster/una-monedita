@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Tu app personal de finanzas conectada a Notion",
     start_url: "/",
     display: "standalone",
-    background_color: "#f4f3ee",
-    theme_color: "#f4f3ee",
+    background_color: "#f2f2ef",
+    theme_color: "#f2f2ef",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

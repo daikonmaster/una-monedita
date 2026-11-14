@@ -27,13 +27,13 @@ function DayRow({ x, cat, onClick }: { x: UITx; cat: UICategory; onClick: () => 
   const { currency } = useStore();
   const inc = cat.type === "income";
   return (
-    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 2px", width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
-      <CatBubble icon={cat.icon} color={cat.color} size={40} stroke={2} />
+    <button onClick={onClick} className="row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 44, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+      <CatBubble icon={cat.icon} color={cat.color} size={40} stroke={1.75} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text)" }}>{x.note || cat.name}</div>
-        <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>{cat.name}</div>
+        <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text)" }}>{x.note || cat.name}</div>
+        <div className="caption" style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</div>
       </div>
-      <span className="num tnum" style={{ fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", flex: "0 0 auto", color: inc ? "var(--income)" : "var(--text)" }}>
+      <span className="amount" style={{ fontSize: 14, whiteSpace: "nowrap", flex: "0 0 auto", color: inc ? "var(--income)" : "var(--expense)" }}>
         {inc ? "+ " : "− "}
         {fmt(x.amount, currency)}
       </span>
@@ -69,11 +69,11 @@ export function Calendario() {
   // (callback ref: se engancha aunque el primer render haya sido un estado de carga)
   const [boxRef, box] = useElementSize();
   const boxH = box.height;
-  const gap = 6;
-  const reserved = wide ? 190 : 300;
+  const gap = 1;
+  const reserved = wide ? 250 : 320;
   const cellMax = wide ? 96 : 40;
   const cellPx = boxH ? Math.max(26, Math.min((boxH - reserved - (rows - 1) * gap) / rows, cellMax)) : 36;
-  const gridMaxWidth = `${Math.round(cellPx * 7 + gap * 6)}px`;
+  const gridMaxWidth = `${Math.round(cellPx * 7 + gap * 6 + 3)}px`;
 
   const monthKey = `${year}-${month}`;
   const firstWithTx = useMemo(
@@ -121,7 +121,8 @@ export function Calendario() {
     const on = d === selDay;
     const isToday = isThisMonth && d === today.getDate();
     const cellNet = txs.reduce((n, t) => (t.transfer ? n : n + (t.type === "income" ? t.amount : -t.amount)), 0);
-    const colors = [...new Set(txs.map((t) => (t.cat ? byId[t.cat]?.color : null)).filter(Boolean))].slice(0, 3) as string[];
+    const hasInc = txs.some((t) => !t.transfer && t.type === "income");
+    const hasExp = txs.some((t) => !t.transfer && t.type !== "income");
     return (
       <button
         onClick={() => setSel(d)}
@@ -129,67 +130,81 @@ export function Calendario() {
         style={{
           position: "relative",
           aspectRatio: "1 / 1",
-          borderRadius: wide ? 13 : 11,
+          minWidth: 0,
+          padding: wide ? 6 : 3,
           cursor: "pointer",
           fontFamily: "inherit",
-          border: isToday && !on ? "2px solid var(--accent)" : txs.length && !on ? "1.5px solid var(--line)" : "1.5px solid transparent",
-          background: on ? "var(--text)" : txs.length ? "var(--surface)" : "transparent",
-          color: on ? "var(--surface)" : txs.length ? "var(--text)" : "var(--text-3)",
-          
+          border: "none",
+          background: "var(--surface)",
+          color: txs.length ? "var(--text)" : "var(--text-2)",
+          outline: on ? "3px solid var(--violet)" : "none",
+          outlineOffset: -3,
+          zIndex: on ? 1 : 0,
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: wide ? 3 : 2,
-          fontWeight: txs.length ? 800 : 600,
-          fontSize: wide ? 14.5 : 13,
-          lineHeight: 1.1,
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          textAlign: "left",
         }}
       >
-        <span>{d}</span>
-        <span style={{ display: "flex", gap: wide ? 3 : 2.5, height: wide ? 5 : 4, alignItems: "center" }}>
-          {colors.map((c, i) => (
-            <span key={i} style={{ width: wide ? 5 : 4, height: wide ? 5 : 4, borderRadius: 999, background: on ? "var(--surface)" : c }} />
-          ))}
+        <span
+          className="num"
+          style={{
+            fontSize: wide ? 13 : 12,
+            lineHeight: 1.2,
+            padding: isToday ? "0 4px" : 0,
+            background: isToday ? "var(--ink)" : "transparent",
+            color: isToday ? "var(--paper)" : "inherit",
+          }}
+        >
+          {d}
         </span>
-        {wide && cellNet !== 0 && (
-          <span className="tnum" style={{ fontSize: 12, fontWeight: 700, color: on ? "var(--surface)" : signedColor(cellNet) }}>
-            {cellNet < 0 ? "−" : "+"}
-            {fmtShort(Math.abs(cellNet), currency)}
+        <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, minWidth: 0, maxWidth: "100%" }}>
+          {wide && cellNet !== 0 && (
+            <span className="num tnum" style={{ fontSize: 11, lineHeight: 1.2, whiteSpace: "nowrap", color: signedColor(cellNet) }}>
+              {cellNet < 0 ? "−" : "+"}
+              {fmtShort(Math.abs(cellNet), currency)}
+            </span>
+          )}
+          <span style={{ display: "flex", gap: 3, height: 6 }}>
+            {hasInc && <span style={{ width: 6, height: 6, background: "var(--income)" }} />}
+            {hasExp && <span style={{ width: 6, height: 6, background: "var(--expense)" }} />}
           </span>
-        )}
+        </span>
       </button>
     );
   }
 
+  // Celdas vacías (fuera del mes): rellenan la grilla para que las hairlines cierren
+  const trailing = rows * 7 - firstWeekday - daysInMonth;
+  const blankCell = (k: string) => <div key={k} style={{ background: "var(--bg)", aspectRatio: "1 / 1" }} />;
   const grid = (
-    <div style={{ width: "100%", maxWidth: gridMaxWidth, margin: "0 auto" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap, marginBottom: wide ? 6 : 5 }}>
+    <div style={{ width: "100%", maxWidth: gridMaxWidth, margin: "0 auto", border: "1.5px solid var(--ink)", background: "var(--surface)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: "1.5px solid var(--ink)" }}>
         {WEEKDAYS.map((w) => (
-          <div key={w} style={{ textAlign: "center", fontSize: 12, fontWeight: 800, letterSpacing: ".06em", color: "var(--text-3)", textTransform: "uppercase" }}>{w}</div>
+          <div key={w} className="eyebrow" style={{ textAlign: "center", fontSize: 11, padding: "6px 0" }}>{w}</div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap }}>
-        {Array.from({ length: firstWeekday }).map((_, i) => (
-          <div key={"b" + i} />
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap, background: "var(--line)" }}>
+        {Array.from({ length: firstWeekday }).map((_, i) => blankCell("b" + i))}
         {Array.from({ length: daysInMonth }).map((_, i) => (
           <DayCell key={i + 1} d={i + 1} />
         ))}
+        {Array.from({ length: trailing }).map((_, i) => blankCell("t" + i))}
       </div>
     </div>
   );
 
   const summary = (
-    <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 14px" }}>
-      <div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <div className="card" style={{ flex: "1 1 140px", minWidth: 0, padding: "8px 12px" }}>
         <div className="eyebrow">Balance mensual</div>
-        <div className="num tnum" style={{ fontSize: 18, fontWeight: 600, color: signedColor(monthNet) }}>{fmt(monthNet, currency, { sign: true })}</div>
+        <div className="display" style={{ fontSize: 22, marginTop: 4, color: signedColor(monthNet) }}>{fmt(monthNet, currency, { sign: true })}</div>
       </div>
       {monthClosing !== null && (
-        <div style={{ textAlign: "right" }}>
+        <div className="card" style={{ flex: "1 1 140px", minWidth: 0, padding: "8px 12px" }}>
           <div className="eyebrow">{monthClosingLabel}</div>
-          <div className="num tnum" style={{ fontSize: 18, fontWeight: 600, color: monthClosing < 0 ? "var(--expense)" : "var(--text)" }}>{fmt(monthClosing, currency)}</div>
+          <div className="display" style={{ fontSize: 22, marginTop: 4, color: monthClosing < 0 ? "var(--expense)" : "var(--text)" }}>{fmt(monthClosing, currency)}</div>
         </div>
       )}
     </div>
@@ -198,72 +213,73 @@ export function Calendario() {
   const dateObj = new Date(year, month, selDay);
   const detail = (
     <div style={{ display: "flex", flexDirection: "column", height: wide ? "100%" : "auto" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-3)" }}>{WEEKDAYS_FULL[dateObj.getDay()]}</div>
-          <div className="num" style={{ fontWeight: 600, fontSize: 23, lineHeight: 1.15, marginTop: 2, whiteSpace: "nowrap" }}>
+          <div className="eyebrow">{WEEKDAYS_FULL[dateObj.getDay()]}</div>
+          <div className="display" style={{ fontSize: 28, marginTop: 4, whiteSpace: "nowrap" }}>
             {selDay} de {MONTHS_FULL[month].toLowerCase()}
           </div>
         </div>
         <button
           onClick={() => openEntry("expense", new Date(year, month, selDay))}
-          className="fab-btn"
+          className="btn btn-primary fab-btn"
           aria-label="Agregar movimiento en este día"
-          style={{ width: 44, height: 44, borderRadius: 12, flex: "0 0 auto", border: "none", cursor: "pointer", background: "var(--accent)", color: "var(--on-accent)", display: "grid", placeItems: "center", boxShadow: "var(--shadow-fab)" }}
+          style={{ width: 44, padding: 0, flex: "0 0 auto" }}
         >
-          <Icon name="Plus" size={22} stroke={2.6} color="var(--on-accent)" />
+          <Icon name="Plus" size={22} stroke={1.75} color="var(--paper)" />
         </button>
       </div>
 
       {(dayTx.length > 0 || dayClosing !== null) && (
-        <div className="caption tnum" style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", columnGap: 14, rowGap: 2 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
           {dayTx.length > 0 && (
-            <span>
-              Balance del día <strong style={{ color: signedColor(dayNet) }}>{fmt(dayNet, currency, { sign: true })}</strong>
-            </span>
+            <div className="card" style={{ flex: "1 1 120px", minWidth: 0, padding: "8px 12px" }}>
+              <div className="eyebrow">Balance del día</div>
+              <div className="amount tnum" style={{ fontSize: 16, color: signedColor(dayNet) }}>{fmt(dayNet, currency, { sign: true })}</div>
+            </div>
           )}
           {dayClosing !== null && (
-            <span>
-              {dayClosingLabel} <strong style={{ color: dayClosing < 0 ? "var(--expense)" : "var(--text)" }}>{fmt(dayClosing, currency)}</strong>
-            </span>
+            <div className="card" style={{ flex: "1 1 120px", minWidth: 0, padding: "8px 12px" }}>
+              <div className="eyebrow">{dayClosingLabel}</div>
+              <div className="amount tnum" style={{ fontSize: 16, color: dayClosing < 0 ? "var(--expense)" : "var(--text)" }}>{fmt(dayClosing, currency)}</div>
+            </div>
           )}
         </div>
       )}
 
       {dayTx.length > 0 ? (
         <>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             {dInc > 0 && (
-              <div style={{ flex: 1, background: "var(--income-soft)", borderRadius: 12, padding: "9px 12px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--income)" }}>Ingresos</div>
-                <div className="num tnum" style={{ fontSize: 16, fontWeight: 600, color: "var(--income)" }}>{fmt(dInc, currency)}</div>
+              <div className="card" style={{ flex: "1 1 120px", minWidth: 0, padding: "8px 12px" }}>
+                <div className="eyebrow">Ingresos</div>
+                <div className="amount tnum" style={{ fontSize: 16, color: "var(--income)" }}>{fmt(dInc, currency)}</div>
               </div>
             )}
             {dExp > 0 && (
-              <div style={{ flex: 1, background: "var(--expense-soft)", borderRadius: 12, padding: "9px 12px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--expense)" }}>Gastos</div>
-                <div className="num tnum" style={{ fontSize: 16, fontWeight: 600, color: "var(--expense)" }}>{fmt(dExp, currency)}</div>
+              <div className="card" style={{ flex: "1 1 120px", minWidth: 0, padding: "8px 12px" }}>
+                <div className="eyebrow">Gastos</div>
+                <div className="amount tnum" style={{ fontSize: 16, color: "var(--expense)" }}>{fmt(dExp, currency)}</div>
               </div>
             )}
           </div>
           <div className="app-scroll" style={{ flex: wide ? 1 : "none", minHeight: 0, overflowY: wide ? "auto" : "visible" }}>
-            {dayTx.map((x) => {
-              const c = x.cat ? byId[x.cat] : null;
-              if (!c) return null;
-              return <DayRow key={x.id} x={x} cat={c} onClick={() => openEdit(x)} />;
-            })}
+            <div style={{ border: "1.5px solid var(--ink)", background: "var(--surface)" }}>
+              {dayTx.map((x) => {
+                const c = x.cat ? byId[x.cat] : null;
+                if (!c) return null;
+                return <DayRow key={x.id} x={x} cat={c} onClick={() => openEdit(x)} />;
+              })}
+            </div>
           </div>
         </>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "32px 20px", gap: 12, flex: wide ? 1 : "none" }}>
-          <div style={{ width: 60, height: 60, borderRadius: "50%", display: "grid", placeItems: "center", background: "var(--bg-2)" }}>
-            <Icon name="CalendarDays" size={28} stroke={1.8} color="var(--text-3)" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "32px 16px", gap: 16, flex: wide ? 1 : "none" }}>
+          <div style={{ width: 60, height: 60, display: "grid", placeItems: "center", background: "var(--bg-2)", border: "1.5px solid var(--ink)" }}>
+            <Icon name="CalendarDays" size={28} stroke={1.5} color="var(--text-2)" />
           </div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-2)" }}>Sin movimientos este día</div>
-          <button
-            onClick={() => openEntry("expense", new Date(year, month, selDay))}
-            style={{ padding: "9px 18px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "inherit", background: "var(--accent-soft)", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13.5 }}
-          >
+          <div style={{ fontWeight: 500, fontSize: 14, color: "var(--text-2)" }}>Sin movimientos este día</div>
+          <button onClick={() => openEntry("expense", new Date(year, month, selDay))} className="btn">
             Agregar movimiento
           </button>
         </div>
@@ -273,15 +289,20 @@ export function Calendario() {
 
   if (wide) {
     return (
-      <div ref={boxRef} style={{ height: "100%", display: "flex", flexDirection: "column", padding: "24px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div className="num" style={{ fontWeight: 600, fontSize: 28 }}>Calendario</div>
-          <MonthNav center={false} />
+      <div ref={boxRef} style={{ height: "100%", display: "flex", flexDirection: "column", padding: "24px 24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+          <div>
+            <div className="sec-label">/03 — Calendario</div>
+            <h1 className="display" style={{ fontSize: 56, margin: "8px 0 16px" }}>Calendario</h1>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <MonthNav center={false} />
+          </div>
         </div>
-        <div style={{ marginBottom: 14, maxWidth: 420 }}>{summary}</div>
-        <div style={{ display: "flex", gap: 28, flex: 1, minHeight: 0 }}>
+        <div style={{ marginBottom: 16, maxWidth: 420 }}>{summary}</div>
+        <div style={{ display: "flex", gap: 24, flex: 1, minHeight: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>{grid}</div>
-          <div style={{ width: 360, flex: "0 0 auto", background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px", display: "flex", flexDirection: "column" }}>
+          <div className="card" style={{ width: 360, flex: "0 0 auto", padding: 16, display: "flex", flexDirection: "column" }}>
             {detail}
           </div>
         </div>
@@ -291,11 +312,11 @@ export function Calendario() {
 
   return (
     <div ref={boxRef} style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", padding: "4px 16px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center", margin: "2px 0 6px", flex: "0 0 auto" }}><MonthNav /></div>
-      <div style={{ flex: "0 0 auto", marginBottom: 10 }}>{summary}</div>
+      <div style={{ display: "flex", justifyContent: "center", margin: "2px 0 8px", flex: "0 0 auto" }}><MonthNav /></div>
+      <div style={{ flex: "0 0 auto", marginBottom: 8 }}>{summary}</div>
       <div style={{ flex: "0 0 auto" }}>{grid}</div>
-      <div style={{ height: 1, background: "var(--line)", margin: "12px 0 10px", flex: "0 0 auto" }} />
-      <div className="app-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 12 }}>{detail}</div>
+      <div style={{ height: 1, background: "var(--line)", margin: "16px 0", flex: "0 0 auto" }} />
+      <div className="app-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 16 }}>{detail}</div>
     </div>
   );
 }
