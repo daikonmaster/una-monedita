@@ -242,7 +242,6 @@ export function SetupForm({
     <div
       className="app-root"
       data-theme="light"
-      data-accent="verde"
       style={{ position: "relative", minHeight: "100dvh", background: "var(--bg)" }}
     >
       {/* Barra fina de marca y estado real de la conexión */}

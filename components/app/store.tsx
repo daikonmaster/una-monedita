@@ -110,12 +110,6 @@ export interface Notice {
   text: string;
 }
 export type DashStyle = "A" | "B" | "C";
-export type Accent = "verde" | "teal" | "grafito";
-
-// "bosque" (tema retirado) y cualquier valor desconocido caen en "verde".
-export function normalizeAccent(raw: string | null): Accent {
-  return raw === "verde" || raw === "teal" || raw === "grafito" ? raw : "verde";
-}
 export type AppCurrency = "ARS" | "USD" | "EUR";
 export type Screen = "dashboard" | "movimientos" | "calendario" | "categorias" | "recurrentes" | "ajustes";
 export type Sim = "normal" | "loading" | "empty" | "error";
@@ -161,8 +155,6 @@ interface StoreValue {
   setTheme: (t: Theme) => void;
   dashStyle: DashStyle;
   setDashStyle: (d: DashStyle) => void;
-  accent: Accent;
-  setAccent: (a: Accent) => void;
   currency: AppCurrency;
   setCurrency: (c: AppCurrency) => void;
   focus: TxType;
@@ -475,7 +467,6 @@ export function StoreProvider({
 
   const [theme, setThemeRaw] = useState<Theme>("system");
   const [dashStyle, setDashStyleRaw] = useState<DashStyle>("A");
-  const [accent, setAccentRaw] = useState<Accent>("verde");
   const [currency, setCurrencyRaw] = useState<AppCurrency>("EUR");
   const [focus, setFocusRaw] = useState<TxType>("expense");
   // Filtro de Movimientos (tipo + categorías). A propósito NO persiste en
@@ -491,18 +482,20 @@ export function StoreProvider({
   useEffect(() => {
     const t = (localStorage.getItem("um.theme") as Theme) || "system";
     const d = (localStorage.getItem("um.dash") as DashStyle) || "A";
-    const rawAccent = localStorage.getItem("um.accent");
-    const a = normalizeAccent(rawAccent);
     const c = (localStorage.getItem("um.currency") as AppCurrency) || "EUR";
     const f = (localStorage.getItem("um.focus") as TxType) || "expense";
     const p = (localStorage.getItem("um.period") as Period) || "Mes";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from localStorage on mount
     setThemeRaw(t);
     setDashStyleRaw(d);
-    setAccentRaw(a);
-    if (rawAccent && rawAccent !== a) persist("um.accent", a);
     setCurrencyRaw(c);
     setFocusRaw(f);
+    // preferencia retirada: un solo acento, se borra la clave vieja
+    try {
+      localStorage.removeItem("um.accent");
+    } catch {
+      /* ignore */
+    }
     // preferencia retirada: siempre acumulado
     try {
       localStorage.removeItem("um.carry");
@@ -523,14 +516,13 @@ export function StoreProvider({
     setPrefsReady(true);
   }, []);
 
-  // Escribe tema resuelto y acento en <html> (el script de app/layout.tsx ya lo
+  // Escribe el tema resuelto en <html> (el script de app/layout.tsx ya lo
   // hizo antes del primer paint; esto lo mantiene al cambiar). "system" escucha
   // los cambios de apariencia del dispositivo. Espera a hidratar las prefs para
   // no pisar el valor guardado con el default.
   useEffect(() => {
     if (!prefsReady) return;
     const root = document.documentElement;
-    root.dataset.accent = accent;
     // La barra de Chrome en Android (y la de Safari hasta iOS 18) se tiñe con
     // theme-color: se iguala al fondo real para que coincida aunque el tema se
     // elija a mano (las metas de app/layout.tsx solo siguen al sistema).
@@ -554,7 +546,7 @@ export function StoreProvider({
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
-  }, [prefsReady, theme, accent]);
+  }, [prefsReady, theme]);
 
   // renueva `today` al volver a la app y a medianoche (un teléfono en el bolsillo
   // puede pasar días sin recargar)
@@ -584,10 +576,6 @@ export function StoreProvider({
   const setDashStyle = useCallback((v: DashStyle) => {
     setDashStyleRaw(v);
     persist("um.dash", v);
-  }, []);
-  const setAccent = useCallback((v: Accent) => {
-    setAccentRaw(v);
-    persist("um.accent", v);
   }, []);
   const setCurrency = useCallback((v: AppCurrency) => {
     setCurrencyRaw(v);
@@ -1370,8 +1358,6 @@ export function StoreProvider({
     setTheme,
     dashStyle,
     setDashStyle,
-    accent,
-    setAccent,
     currency,
     setCurrency,
     focus,

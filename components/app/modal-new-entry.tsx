@@ -57,7 +57,9 @@ function Key({ label, onClick, variant, span }: { label: ReactNode; onClick: () 
         color: "var(--text)",
         display: "grid",
         placeItems: "center",
-        minHeight: 52,
+        // 52px en teléfonos altos; en pantallas bajas (375x667) se achica para
+        // que la calculadora entre sin scroll, nunca por debajo del objetivo táctil de 44px
+        minHeight: "clamp(44px, 7dvh, 52px)",
         padding: 0,
         gridColumn: span ? `span ${span}` : undefined,
       }}

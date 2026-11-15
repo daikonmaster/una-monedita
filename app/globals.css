@@ -25,7 +25,7 @@
    Los tokens viven en :root + [data-theme] para que tambien resuelvan fuera
    de .app-root. El tema resuelto ("light"|"dark") se escribe en
    <html data-theme> antes del primer paint (script en app/layout.tsx).
-   [data-accent] ya no cambia nada: el sistema tiene un solo acento.
+   El sistema tiene un solo acento (violeta): no hay [data-accent].
    ========================================================================== */
 
 :root {
