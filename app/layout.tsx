@@ -1,20 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Geist_Mono, Fraunces } from "next/font/google";
+import { Anton, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-app",
-});
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
-// Variable con ejes SOFT/opsz: la firma (.num-coin) usa cifras redondas y el
-// navegador no sintetiza negritas.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  axes: ["SOFT", "opsz"],
-  variable: "--font-serif",
-});
+// Anton: solo titulares y cifras grandes (.display). JetBrains Mono: toda la UI.
+const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
+const jetbrains = JetBrains_Mono({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-jb" });
 
 export const metadata: Metadata = {
   title: "UnaMonedita · Finanzas personales",
@@ -32,14 +22,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f3ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#171614" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f2ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0d" },
   ],
 };
 
-// Resuelve tema y acento antes del primer paint (evita el destello claro).
-// um.theme: "system" | "light" | "dark" (default system); um.accent: verde | teal | grafito (cualquier otro valor, p. ej. el viejo "bosque", cae en verde).
-const THEME_BOOTSTRAP = `(function(){try{var d=document.documentElement,t=localStorage.getItem("um.theme")||"system",a=localStorage.getItem("um.accent")||"verde";if(a!=="verde"&&a!=="teal"&&a!=="grafito")a="verde";if(t!=="light"&&t!=="dark")t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t;d.dataset.accent=a;}catch(e){document.documentElement.dataset.theme="light"}})();`;
+// Resuelve el tema antes del primer paint (evita el destello claro).
+// um.theme: "system" | "light" | "dark" (default system).
+const THEME_BOOTSTRAP = `(function(){try{var d=document.documentElement,t=localStorage.getItem("um.theme")||"system";if(t!=="light"&&t!=="dark")t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";d.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="light"}})();`;
 
 export default function RootLayout({
   children,
@@ -50,7 +40,7 @@ export default function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${nunito.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${anton.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />

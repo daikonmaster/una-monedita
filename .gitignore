@@ -50,3 +50,6 @@ next-env.d.ts
 
 # symlinks locales de skills (rutas absolutas, no portables)
 .claude/
+
+# graphify (grafo local)
+graphify-out/

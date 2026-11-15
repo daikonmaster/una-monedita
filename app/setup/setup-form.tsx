@@ -47,38 +47,22 @@ const STEPS: { n: number; title: string; body: string }[] = [
   },
 ];
 
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: ".06em",
-  color: "var(--text-3)",
-  marginBottom: 8,
-  fontWeight: 800,
-};
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "13px 15px",
-  borderRadius: 12,
-  background: "var(--surface)",
-  border: "1px solid var(--line)",
-  color: "var(--text)",
-  fontSize: 16,
-  fontFamily: "inherit",
-  fontWeight: 600,
+  fontFamily: "var(--font-mono)",
+  fontWeight: 500,
 };
 
 function Steps() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {STEPS.map((s) => (
         <div key={s.n} style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: "0 0 auto", width: 26, height: 26, borderRadius: 999, background: "var(--accent-soft)", color: "var(--accent-ink)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 13 }}>
-            {s.n}
+          <div aria-hidden="true" style={{ flex: "0 0 auto", minWidth: 32, color: "var(--violet)", fontWeight: 700, fontSize: 13, lineHeight: "18px" }}>
+            {"/" + String(s.n).padStart(2, "0")}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 800, fontSize: 14.5, color: "var(--text)", marginBottom: 2 }}>{s.title}</div>
-            <div style={{ fontSize: 13, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.45 }}>{s.body}</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 4 }}>{s.title}</div>
+            <div className="caption" style={{ lineHeight: 1.45 }}>{s.body}</div>
           </div>
         </div>
       ))}
@@ -132,32 +116,24 @@ function ConnectFlow() {
   const disabled = loading || !token || !pageUrl;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <a
-          href={NOTION_TEMPLATE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px", borderRadius: 12, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 14.5, textDecoration: "none", fontFamily: "inherit", boxShadow: "var(--shadow-fab)" }}
-        >
-          <ExternalLink size={17} strokeWidth={2.4} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <a href={NOTION_TEMPLATE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-accent btn-block">
+          <ExternalLink size={16} strokeWidth={1.75} />
           Abrir plantilla y duplicar
+          <span aria-hidden="true">↗</span>
         </a>
-        <a
-          href={NOTION_INTEGRATIONS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontWeight: 700, fontSize: 13.5, textDecoration: "none", fontFamily: "inherit" }}
-        >
-          <ExternalLink size={16} strokeWidth={2.2} />
+        <a href={NOTION_INTEGRATIONS_URL} target="_blank" rel="noopener noreferrer" className="btn btn-block">
+          <ExternalLink size={16} strokeWidth={1.75} />
           Crear integración de Notion
+          <span aria-hidden="true">↗</span>
         </a>
       </div>
 
       <Steps />
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
-          <label htmlFor="pageUrl" style={labelStyle}>URL de tu página de Notion</label>
+          <label htmlFor="pageUrl" className="eyebrow" style={{ display: "block", marginBottom: 8 }}>URL de tu página de Notion</label>
           <input
             id="pageUrl"
             name="username"
@@ -169,11 +145,12 @@ function ConnectFlow() {
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
+            className="field"
             style={inputStyle}
           />
         </div>
         <div>
-          <label htmlFor="token" style={labelStyle}>Token de integración</label>
+          <label htmlFor="token" className="eyebrow" style={{ display: "block", marginBottom: 8 }}>Token de integración</label>
           <input
             id="token"
             name="password"
@@ -182,41 +159,39 @@ function ConnectFlow() {
             onChange={(e) => setToken(e.target.value)}
             placeholder="ntn_..."
             autoComplete="current-password"
+            className="field"
             style={inputStyle}
           />
         </div>
 
         {!standalone && (
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, cursor: "pointer", fontWeight: 700, fontSize: 14, color: "var(--text)" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 44, cursor: "pointer", fontWeight: 500, fontSize: 14, color: "var(--text)" }}>
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                style={{ width: 20, height: 20, accentColor: "var(--accent)" }}
+                style={{ width: 20, height: 20, accentColor: "var(--ink)", flex: "0 0 auto" }}
               />
               Recordar en este dispositivo
             </label>
-            <div style={{ fontSize: 12.5, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.4 }}>
+            <div className="caption">
               Desmarcalo en una compu compartida: se borra al cerrar el navegador.
             </div>
           </div>
         )}
 
         {error && (
-          <p role="alert" style={{ fontSize: 13.5, color: "var(--expense)", background: "var(--expense-soft)", borderRadius: 10, padding: "10px 12px", fontWeight: 600, lineHeight: 1.4 }}>{error}</p>
+          <p role="alert" className="is-inv" style={{ fontSize: 13, border: "1.5px solid var(--ink)", padding: "8px 12px", fontWeight: 500, lineHeight: 1.4, margin: 0 }}>{error}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={disabled}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, padding: "14px", borderRadius: 12, border: "none", background: disabled ? "var(--bg-2)" : "var(--accent)", color: disabled ? "var(--text-3)" : "var(--on-accent)", fontWeight: 800, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit" }}
-        >
-          <Plug size={18} strokeWidth={2.4} />
+        <button type="submit" disabled={disabled} className="btn btn-primary btn-block" style={{ minHeight: 52 }}>
+          <Plug size={18} strokeWidth={1.75} />
           {loading ? "Conectando…" : "Conectar"}
+          <span aria-hidden="true">↗</span>
         </button>
 
-        <p style={{ fontSize: 12.5, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.45, textAlign: "center" }}>
+        <p className="caption" style={{ textAlign: "center", margin: 0 }}>
           Conectá solo en una instalación tuya o de alguien de confianza: el servidor usa tu token para leer tu Notion.
         </p>
       </form>
@@ -267,81 +242,73 @@ export function SetupForm({
     <div
       className="app-root"
       data-theme="light"
-      data-accent="verde"
-      style={{ position: "relative", minHeight: "100dvh", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 16, background: "var(--bg)", overflow: "hidden" }}
+      style={{ position: "relative", minHeight: "100dvh", background: "var(--bg)" }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/bg-login.webp"
-        alt=""
-        aria-hidden="true"
-        style={{ position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-      />
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: 460,
-          margin: "16px 0 32px",
-          background: "color-mix(in srgb, var(--surface) 90%, transparent)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          border: "1px solid color-mix(in srgb, var(--line) 70%, transparent)",
-          borderRadius: 24,
-          padding: "32px 24px 28px",
-          boxShadow: "var(--shadow-modal)",
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
+      {/* Barra fina de marca y estado real de la conexión */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 16px", borderBottom: "1.5px solid var(--ink)", background: "var(--surface)" }}>
+        <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.08em" }}>UNA_MONEDITA</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 500, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <span className="dot" style={connected ? undefined : { background: "var(--text-2)" }} />
+          {connected ? "Conectado" : "Sin conectar"}
+        </span>
+      </div>
+
+      <div style={{ width: "100%", maxWidth: 520, margin: "0 auto", padding: "40px 24px" }}>
+        <div style={{ marginBottom: 40 }}>
+          <div className="sec-label" style={{ marginBottom: 16 }}>/00 — Conectar</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo.png"
             alt="UnaMonedita"
-            width={60}
-            height={60}
-            style={{ display: "inline-block", width: 60, height: 60, borderRadius: 16, marginBottom: 14, boxShadow: "var(--shadow-fab)", objectFit: "cover" }}
+            width={56}
+            height={56}
+            style={{ display: "block", width: 56, height: 56, marginBottom: 16, border: "1.5px solid var(--ink)", objectFit: "cover" }}
           />
-          <h1 className="num" style={{ fontSize: 26, fontWeight: 600, color: "var(--text)", marginBottom: 2 }}>UnaMonedita</h1>
-          <p style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.45 }}>
+          <h1 className="display" style={{ fontSize: "clamp(48px, 13vw, 96px)", lineHeight: 0.9, margin: "0 0 16px" }}>
+            Una
+            <br />
+            Monedita
+          </h1>
+          <p className="kicker" style={{ margin: 0 }}>
             Finanzas personales. Tu base de datos es privada y vive en tu propia cuenta de Notion.
           </p>
         </div>
 
         {banner && (
-          <p role="status" style={{ fontSize: 13.5, color: "var(--text)", background: "var(--accent-soft)", borderRadius: 10, padding: "10px 12px", fontWeight: 700, lineHeight: 1.4, marginBottom: 20 }}>
+          <p role="status" className="is-inv" style={{ fontSize: 13, border: "1.5px solid var(--ink)", padding: "8px 12px", fontWeight: 500, lineHeight: 1.4, margin: "0 0 24px" }}>
             {banner}
           </p>
         )}
 
-        {showConnected ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px" }}>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>Ya estás conectado</div>
-              <div className="caption">
-                {via === "dev" ? "Modo desarrollo: usa el Notion de .env.local." : "Este dispositivo ya tiene tu Notion conectado."}
+        <div className="card-hero" style={{ margin: 8 }}>
+          {showConnected ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>Ya estás conectado</div>
+                <div className="caption">
+                  {via === "dev" ? "Modo desarrollo: usa el Notion de .env.local." : "Este dispositivo ya tiene tu Notion conectado."}
+                </div>
+                <Link href="/" className="btn btn-primary btn-block" style={{ minHeight: 52 }}>
+                  Ir a la app
+                  <span aria-hidden="true">↗</span>
+                </Link>
               </div>
-              <Link
-                href="/"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 48, borderRadius: 12, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 15, textDecoration: "none" }}
-              >
-                Ir a la app
-              </Link>
+              <details>
+                <summary className="eyebrow" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", color: "var(--text)" }}>
+                  Conectar otra cuenta de Notion
+                </summary>
+                <div style={{ paddingTop: 16 }}>
+                  <ConnectFlow />
+                </div>
+              </details>
             </div>
-            <details>
-              <summary style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", fontWeight: 800, fontSize: 14, color: "var(--accent-ink)" }}>
-                Conectar otra cuenta de Notion
-              </summary>
-              <div style={{ paddingTop: 12 }}>
-                <ConnectFlow />
-              </div>
-            </details>
-          </div>
-        ) : (
-          <ConnectFlow />
-        )}
+          ) : (
+            <ConnectFlow />
+          )}
+        </div>
 
         {autoSecret && (
-          <p style={{ fontSize: 12.5, color: "var(--text-3)", fontWeight: 600, lineHeight: 1.45, textAlign: "center", marginTop: 16 }}>
+          <p className="caption" style={{ border: "1.5px solid var(--ink)", padding: "8px 12px", marginTop: 24, marginBottom: 0 }}>
             Esta instalación usa una clave automática: después de cada nuevo deploy puede pedirte conectar otra vez. Para evitarlo, definí AUTH_COOKIE_SECRET en Vercel (ver DEPLOY.md).
           </p>
         )}

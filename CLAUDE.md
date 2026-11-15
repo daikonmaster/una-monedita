@@ -12,26 +12,26 @@ App de finanzas personales de Franco Recabarren. Registra gastos e ingresos en N
 - Notion como base de datos (workspace "Notion de Franco Recabarren")
 - Integración Notion: "UNA MONEDITA"
 - jose (cookie cifrada JWE con la conexión a Notion), zod v4
-- **lucide-react** (iconos — estilo Monefy, NO Phosphor)
+- **lucide-react** (iconos, trazo cuadrado; NO Phosphor)
 - Vercel deployment (proyecto `una-monedita`, team `franco-s-projects02`, user `francorecabarren-8052`; projectId `prj_KtMp6hZWEoPSIcVIKI1kiEZuIEsz`)
 
-## Design system: Monefy/UnaMonedita (warm + verde, claro/oscuro)
+## Design system: cyber brutalista (sistema "Franco Recabarren", claro/oscuro)
 
-Reemplaza al viejo minimalist-ui. Definido en `app/globals.css` con CSS vars por tema.
-- App = SPA client-side estilo Monefy: 4 pantallas (Resumen donut, Movimientos, Calendario, Categorías) + Fijos + Ajustes, navegación interna. Móvil: 5 pestañas (Categorías se abre desde Ajustes → "Categorías y presupuestos"); desktop: sidebar con las 6 y los botones Agregar gasto/ingreso arriba (atajos `g` / `i`).
+Reemplaza al sistema Monefy (Nunito + Fraunces, verde, radios, sombras). Definido en `app/globals.css` (su cabecera y comentarios son la fuente de verdad) con CSS vars por tema. El sistema de origen vive en Claude Design (artefacto "Franco Recabarren"); `app/globals.css` es su traducción a la app.
+- App = SPA client-side: 4 pantallas (Resumen donut, Movimientos, Calendario, Categorías) + Fijos + Ajustes, navegación interna. Móvil: 5 pestañas (Categorías se abre desde Ajustes → "Categorías y presupuestos"); desktop: sidebar con las 6 y los botones Agregar gasto/ingreso arriba (atajos `g` / `i`).
 - Modales: todos usan `components/app/Sheet.tsx` (`role="dialog"`, foco que entra y vuelve, trap de Tab, Escape) + `SheetHeader` + `ConfirmRow` (confirmación destructiva dentro del sheet). Nunca dos sheets apilados.
 - Avisos: `Toast` (ui.tsx) dentro del Shell; `notice = { kind: "error" | "success", text }`; los errores no se cierran solos, los éxitos a los 2.5 s.
-- Fuentes: **Nunito** (`--font-app`, UI), **Fraunces** variable con ejes SOFT/opsz (`--font-serif`, números display `.num`; `.num-coin` = cifras redondas, solo para el Disponible). Nunca Fraunces por encima de 600.
-- **Un color = un significado** (tokens en `app/globals.css`): `--accent*` (botón primario, nav activa, anillo "hoy", foco; cambia con `[data-accent]` verde/teal/grafito), `--income*` (ingresos, fijo), `--expense*` (gastos, fijo), `--warn` (presupuesto al 80%), `--on-accent/--on-income/--on-expense` (texto sobre rellenos). Texto de ingreso/gasto usa `--income`/`--expense` (AA); `--income-fill`/`--expense-fill` son solo rellenos y barras. No usar `#fff` fijo ni `--green`/`--red` (ya no existen).
-- Tema: `Theme = "system" | "light" | "dark"` (default `system`). El tema resuelto y el acento viven en `<html data-theme data-accent>`; un script en `app/layout.tsx` los escribe antes del primer paint y el store los mantiene. Los tokens están en `:root` + `[data-theme]` para que resuelvan fuera de `.app-root`.
-- Escala: radios `--r-sm/md/lg/xl/pill` (8/12/16/22/999); `.card` / `.card-hero` (única receta de tarjeta, con borde); `.eyebrow`, `.caption`, `.amount`, `.sheet-title`, `.sr-only`; foco visible global (`:focus-visible`), `.field-wrap` para inputs sin borde propio; `prefers-reduced-motion` respetado. Texto mínimo 11px, objetivos táctiles 44px.
-- Bordes móvil (`Shell.tsx` + `globals.css`): `.app-root` mide `100dvh` (el viewport visible real, en todos los navegadores), así que el documento no scrollea; el scroll vive en cada `.app-scroll`. Solo en iOS (`@supports (-webkit-touch-callout: none)`) y solo con el shell (`html:has(.app-shell)`, clase solo del root de `Shell.tsx`) se traba el documento (`overflow: hidden`) y se apaga el rebote (`overscroll-behavior: none` en html/body, `contain` en `.app-shell .app-scroll`). En Android no: con cualquiera de los dos en la raíz Chrome apaga el pull-to-refresh, la única forma de recargar la PWA instalada. `/setup` usa `.app-root` pero no `.app-shell`, y sigue scrolleando. **Nunca `100vh`/`100lvh` en el shell:** en el móvil miden la pantalla con las barras del navegador ocultas y toda la app scrollea (pasó con `100lvh` en iOS). Header: `max(10px, safe-area-inset-top - 8px)`. `.mobile-nav`: `max(8px, inset inferior)`; en pestaña de Safari iOS `max(14px, …)` porque la píldora flotante de la URL monta ~13px sobre la página (ahí el inset es 0); en standalone vuelve al inset. `.chin-tint` (tira fija de 2px `--surface` bajo la nav): Safari 26 ignora `theme-color` y tiñe la franja de su barra con el fondo del elemento fijo que toca el borde inferior. Móvil: `touch-action: manipulation`; botones y nav sin selección ni menú de mantener presionado (el resto del texto, como los IDs de Notion en Ajustes, se puede copiar). `store.tsx` copia `--bg` a `meta[name="theme-color"]` al cambiar tema/acento.
-- Paleta categorías `--cat-*`; el glifo de `CatBubble` se mezcla con `--text` (`--glyph-mix`) para contraste.
-- Iconos: **lucide-react** vía `lib/icon-registry.ts` (registro explícito ~180 nombres, tree-shaken) + `components/app/Icon.tsx`.
+- Fuentes (next/font en `app/layout.tsx`): **JetBrains Mono** (`--font-jb` → `--font-mono`, toda la UI, pesos 400/500/700) y **Anton** (`--font-anton` → `--font-display`, clase `.display`, solo titulares y cifras de 22px o más). `.num` y `.amount` son mono 700 tabular; `.num-coin` y `.sheet-title` son Anton.
+- Leyes: radio 0 en todo (red `!important` sobre `.app-root *`; único redondo `.dot`; los tokens `--r-*` valen 0), sin sombras ni degradados, hairline 1px `--line` y control 1.5px `--ink`, seleccionado = invertido (`.is-inv`, nunca "fondo suave + texto de color"), mayúsculas por CSS (`text-transform`; nunca reescribir los strings), grilla de 40px visible en `.app-root`. Foco visible global violeta de 3px; `prefers-reduced-motion` respetado. Texto mínimo 11px, objetivos táctiles 44px.
+- **Un color = un significado** (tokens en `app/globals.css`): `--ink`/`--paper` (texto y fondo); ingresos = tinta (`--income`); gastos y acento = violeta (`--violet`, `--expense`: enlaces, foco, barras de datos); lima (`--lime`, `.is-lime`) solo para el "Disponible hoy", siempre como fondo con `--on-lime`. Colores de categoría `--cat-*` y los hex de Notion son datos y se conservan: `CatBubble` es cuadrado, color pleno, borde tinta y glifo `--on-cat`. Los nombres viejos (`--bg`, `--surface`, `--text`, `--accent*`, `--income*`, `--expense*`) siguen existiendo y apuntan a la paleta nueva. `.is-lime` e `.is-inv` reasignan los tokens de texto para sus hijos. No usar `#fff` fijo.
+- Tema: `Theme = "system" | "light" | "dark"` (default `system`). El tema resuelto vive en `<html data-theme>`; un script en `app/layout.tsx` lo escribe antes del primer paint y el store lo mantiene. Los tokens están en `:root` + `[data-theme]` para que resuelvan fuera de `.app-root`.
+- Acento: un solo acento (violeta). El selector de color, `data-accent` y `um.accent` ya no existen; el store borra `um.accent` viejo al cargar.
+- Clases del contrato: `.card` / `.card-hero` (única receta de tarjeta, borde 1.5px; `.card-hero` trae marcas + en las esquinas, `.mk` se las da a otro bloque con `position: relative`), `.btn` y variantes (`-primary` tinta, una por pantalla; `-accent` violeta; `-ghost`; `-block`), `.seg` (SegmentedControl, `role="radiogroup"`), `.field` / `.field-wrap` (inputs sin borde propio), `.tag` (`inv`, `v`, `lime`), `.track` + `.fill` (`near` = trama, `over` = tinta), `.eyebrow`, `.label`, `.sec-label` (numeración fija en `Shell.tsx`: /01 Resumen, /02 Movimientos, /03 Calendario, /04 Fijos, /05 Categorías, /06 Ajustes), `.kicker`, `.bracket`, `.caption`, `.link`, `.hatch`, `.rule`, `.row`, `.statusbar`, `.sr-only`.
+- Bordes móvil (`Shell.tsx` + `globals.css`): `.app-root` mide `100dvh` (el viewport visible real, en todos los navegadores), así que el documento no scrollea; el scroll vive en cada `.app-scroll`. Solo en iOS (`@supports (-webkit-touch-callout: none)`) y solo con el shell (`html:has(.app-shell)`, clase solo del root de `Shell.tsx`) se traba el documento (`overflow: hidden`) y se apaga el rebote (`overscroll-behavior: none` en html/body, `contain` en `.app-shell .app-scroll`). En Android no: con cualquiera de los dos en la raíz Chrome apaga el pull-to-refresh, la única forma de recargar la PWA instalada. `/setup` usa `.app-root` pero no `.app-shell`, y sigue scrolleando. **Nunca `100vh`/`100lvh` en el shell:** en el móvil miden la pantalla con las barras del navegador ocultas y toda la app scrollea (pasó con `100lvh` en iOS). Header: `max(10px, safe-area-inset-top - 8px)`. `.mobile-nav`: `max(8px, inset inferior)`; en pestaña de Safari iOS `max(14px, …)` porque la píldora flotante de la URL monta ~13px sobre la página (ahí el inset es 0); en standalone vuelve al inset. `.chin-tint` (tira fija de 2px `--surface` bajo la nav): Safari 26 ignora `theme-color` y tiñe la franja de su barra con el fondo del elemento fijo que toca el borde inferior. Móvil: `touch-action: manipulation`; botones y nav sin selección ni menú de mantener presionado (el resto del texto, como los IDs de Notion en Ajustes, se puede copiar). `store.tsx` copia `--bg` a `meta[name="theme-color"]` al cambiar el tema.
+- Iconos: **lucide-react** vía `lib/icon-registry.ts` (registro explícito ~180 nombres, tree-shaken) + `components/app/Icon.tsx`. Trazo cuadrado (`strokeLinecap="square"`, `miter`, grosor máx. 1.75).
 - Categorías guardan `Icon` (nombre Lucide PascalCase) + `Color` (hex) en Notion.
 - Tienda de Iconos: catálogo en `lib/icon-catalog.ts` (`GROUPS`, `COLORS`, `ALL`).
-- **Grafito:** tema en escala de grises (`[data-theme="light"|"dark"][data-accent="grafito"]` en `globals.css`, especificidad 0,2,0). Reemplaza fondos, texto y acento por grises neutros; `--income*`, `--expense*`, `--warn` y `--cat-*` no se tocan. El acento viejo "bosque" ya no existe: `normalizeAccent` (store) y el script de `layout.tsx` lo migran a "verde".
-- Preferencias (theme/dashStyle/accent/currency/focus/period) persisten en localStorage (`um.theme/um.dash/um.accent/um.currency/um.focus/um.period`). `um.pay` guarda el último medio de pago usado en el modal de gasto (lo lee `modal-new-entry.tsx`, no el store). `um.carry` ya no existe (el saldo siempre es acumulado; el store lo borra).
+- Preferencias (theme/dashStyle/currency/focus/period) persisten en localStorage (`um.theme/um.dash/um.currency/um.focus/um.period`). `um.pay` guarda el último medio de pago usado en el modal de gasto (lo lee `modal-new-entry.tsx`, no el store). `um.carry` y `um.accent` ya no existen (el saldo siempre es acumulado y hay un solo acento; el store los borra).
 
 ## Notion — IDs y caveats críticos
 
@@ -82,7 +82,7 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 | Calendario (grilla + detalle día) | ✅ |
 | Fijos / recurrentes (lista única compacta + ✓ Registrar pago + contador mensual) | ✅ |
 | Categorías (CRUD + Tienda Iconos) | ✅ |
-| Ajustes (moneda, saldo "¿Cuánta plata tenés hoy?", tema, color Verde/Turquesa/Grafito, dashStyle, Notion: cambiar/desconectar, mantenimiento) | ✅ |
+| Ajustes (moneda, saldo "¿Cuánta plata tenés hoy?", tema, dashStyle, Notion: cambiar/desconectar, mantenimiento) | ✅ |
 
 ## API Routes
 
@@ -199,10 +199,13 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
   (`isFullMonthRange`, en `lib/date-range.ts`); en Día/Semana/Año/rangos
   parciales vuelve a mostrar el % relativo normal.
 - Estado y color: `lib/budget.ts` `budgetState(spent, limit, alertAt80)` →
-  `{ ratio, level }`. Verde (`--income`) por debajo del 80%, ámbar (`--warn`) del
-  80% al límite inclusive (solo si `AlertAt80`), rojo (`--expense`) al superar el
-  límite. **Solo el valor del límite lleva el color**; el gasto queda neutro
-  (`--text`) y el "de" / "/" en `--text-3`. Componentes en `ui.tsx`:
+  `{ ratio, level }`. `ok` por debajo del 80%; `near` del 80% al límite inclusive
+  (solo si `AlertAt80`); `over` al superar el límite. Ya no hay verde/ámbar/rojo:
+  `ok` = barra violeta (`--violet`) con el límite en `--text`; `near` = barra
+  violeta con trama (`.track .fill.near`) y el límite en violeta; `over` = barra
+  de tinta llena (`.fill.over`) y el límite como chip invertido (`--ink` sobre
+  `--paper`). **Solo el valor del límite se marca**; el gasto queda neutro
+  (`--text`) y el "de" / "/" en `--text-2`. Componentes en `ui.tsx`:
   `BudgetAmount` ("€ 6 de € 30", `short` para las tarjetas), `BudgetBar` y los
   mapas `BUDGET_TEXT` / `BUDGET_FILL`. No colorear a mano: usar siempre estos.
 - Movimientos (`screen-movimientos.tsx`): con el mismo criterio de mes completo
@@ -223,7 +226,7 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
   en una propiedad que no existe falla. `pageToTransaction` tolera bases sin la
   propiedad y opciones desconocidas (→ `null`).
 
-## Categorías (set Monefy actual)
+## Categorías (set actual)
 
 **Gasto:** Comida·Utensils, Supermercado·ShoppingCart, Transporte·Car, Casa·House, Servicios·Plug, Ropa·Shirt, Ocio·Gamepad2, Salud·HeartPulse, Café·Coffee, Mascotas·PawPrint, Educación·GraduationCap, Regalos·Gift  
 **Ingreso:** Salario·Wallet, Changas·Briefcase, Ahorros·PiggyBank  
@@ -232,9 +235,9 @@ SPA: única ruta visible `/dashboard` renderiza `<AppRoot>` (server fetch inicia
 ## Componentes clave (`components/app/`)
 
 - `AppRoot.tsx` — StoreProvider + Shell, recibe initial data del server
-- `store.tsx`: context store wired a API (CRUD tx/categorías/fijos/presupuestos, rango de fechas, cache por año, `available`/`today`/`setAvailableToday`, theme/dashStyle/accent). Todo `fetch` pasa por `apiFetch`: un 401 = Notion desconectado → aviso + `location.replace("/setup?reason=expired|revoked")`. Los errores de mutación llegan al toast con el motivo real del servidor (`HttpError` / `failureText`)
-- `Shell.tsx` — layout responsive (Sidebar desktop / BottomNav móvil), nav, ThemeToggle
-- `Icon.tsx` — `Icon` (Lucide vía registry) + `CatBubble`
+- `store.tsx`: context store wired a API (CRUD tx/categorías/fijos/presupuestos, rango de fechas, cache por año, `available`/`today`/`setAvailableToday`, theme/dashStyle). Todo `fetch` pasa por `apiFetch`: un 401 = Notion desconectado → aviso + `location.replace("/setup?reason=expired|revoked")`. Los errores de mutación llegan al toast con el motivo real del servidor (`HttpError` / `failureText`)
+- `Shell.tsx` — layout responsive (Sidebar desktop / BottomNav móvil), nav (`NAV` con la numeración /01 a /06), `PageHead`, `statusbar` en el sidebar
+- `Icon.tsx` — `Icon` (Lucide vía registry, trazo cuadrado) + `CatBubble` (cuadrado, color pleno, borde tinta, glifo `--on-cat`)
 - `Donut.tsx`: donut SVG segmentado; expone `DonutInner` (ancho del hueco) para que `CenterBalance` ajuste la cifra
 - `ui.tsx`: SegmentedControl (único estilo de selección; PeriodPills, Segmented), MonthNav (Calendario) / RangeNav (Resumen), CenterBalance (total del foco que se ajusta al hueco del anillo, sin saldo), ActionButton, Toast, StateView
 - `Sheet.tsx` (Sheet, SheetHeader, ConfirmRow), `Coin.tsx`, `balance.tsx` (PeriodSummary, Monedero, BalanceCard, BalanceSheet)

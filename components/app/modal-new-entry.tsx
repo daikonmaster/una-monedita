@@ -42,23 +42,25 @@ function calc(expr: string): number {
   return stack.reduce((a, b) => a + b, 0);
 }
 
-function Key({ label, onClick, variant, accent, span }: { label: ReactNode; onClick: () => void; variant?: "op"; accent: string; span?: number }) {
+function Key({ label, onClick, variant, span }: { label: ReactNode; onClick: () => void; variant?: "op"; span?: number }) {
+  const op = variant === "op";
   return (
     <button
       onClick={onClick}
-      className="key-btn"
+      className={op ? "key-btn" : "key-btn display"}
       style={{
-        border: "1px solid var(--line)",
+        border: 0,
         cursor: "pointer",
-        fontFamily: "inherit",
-        borderRadius: 12,
-        fontSize: 22,
-        fontWeight: 700,
-        background: variant === "op" ? "var(--bg-2)" : "var(--surface)",
-        color: variant === "op" ? accent : "var(--text)",
+        fontSize: op ? 20 : 26,
+        ...(op ? { fontWeight: 700 } : {}),
+        background: op ? "var(--bg-2)" : "var(--surface)",
+        color: "var(--text)",
         display: "grid",
         placeItems: "center",
-        height: 54,
+        // 52px en teléfonos altos; en pantallas bajas (375x667) se achica para
+        // que la calculadora entre sin scroll, nunca por debajo del objetivo táctil de 44px
+        minHeight: "clamp(44px, 7dvh, 52px)",
+        padding: 0,
         gridColumn: span ? `span ${span}` : undefined,
       }}
     >
@@ -201,14 +203,15 @@ function EntryForm({
   });
 
   const accent = type === "expense" ? "var(--expense)" : "var(--income)";
-  const fill = type === "expense" ? "var(--expense-fill)" : "var(--income-fill)";
-  const onFill = type === "expense" ? "var(--on-expense)" : "var(--on-income)";
+  // confirmar: violeta para gasto, tinta para ingreso
+  const fill = type === "expense" ? "var(--violet)" : "var(--ink)";
+  const onFill = type === "expense" ? "var(--on-violet)" : "var(--paper)";
   const canSave = result > 0 && !!catId;
 
   return (
     <Sheet label={fromSub ? "Registrar pago" : edit ? "Editar movimiento" : "Agregar movimiento"} onClose={requestClose} style={{ display: "flex", flexDirection: "column", maxHeight: "94dvh" }}>
       {confirmKind ? (
-        <div style={{ padding: "28px 22px calc(22px + env(safe-area-inset-bottom))", textAlign: "center", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ padding: "24px 16px calc(16px + env(safe-area-inset-bottom))", textAlign: "center", display: "flex", flexDirection: "column", gap: 16 }}>
           <h2 className="sheet-title" style={{ margin: 0 }}>
             {confirmKind === "discard"
               ? `¿Descartar este ${type === "expense" ? "gasto" : "ingreso"}?`
@@ -217,18 +220,11 @@ function EntryForm({
           <p className="caption" style={{ margin: 0 }}>
             {confirmKind === "discard" ? "Se pierde lo que escribiste." : "No se puede deshacer."}
           </p>
-          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-            <button
-              onClick={() => setConfirmKind(null)}
-              data-autofocus
-              style={{ flex: 1, minHeight: 48, borderRadius: 12, border: "1.5px solid var(--line)", background: "var(--surface)", color: "var(--text-2)", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}
-            >
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button onClick={() => setConfirmKind(null)} data-autofocus className="btn" style={{ flex: 1, minHeight: 48 }}>
               {confirmKind === "discard" ? "Seguir editando" : "Cancelar"}
             </button>
-            <button
-              onClick={confirmKind === "discard" ? closeEntry : remove}
-              style={{ flex: 1, minHeight: 48, borderRadius: 12, border: "none", background: "var(--expense-fill)", color: "var(--on-expense)", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit" }}
-            >
+            <button onClick={confirmKind === "discard" ? closeEntry : remove} className="btn btn-accent" style={{ flex: 1, minHeight: 48 }}>
               {confirmKind === "discard" ? "Descartar" : "Eliminar"}
             </button>
           </div>
@@ -236,11 +232,11 @@ function EntryForm({
       ) : panel === "cats" ? (
         <SheetHeader title="Elegí categoría" onClose={() => (dirty ? setConfirmKind("discard") : closeEntry())} onBack={() => setPanel("pad")} backLabel="Volver al monto" />
       ) : (
-        <div style={{ padding: "14px 12px 10px 18px", display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
+        <div style={{ padding: "16px 8px 8px 16px", display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
           {fromSub ? (
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="eyebrow">Registrar pago</div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {fromSub.name}
               </div>
             </div>
@@ -250,55 +246,55 @@ function EntryForm({
             </div>
           )}
           {edit && !fromSub && (
-            <button className="icon-btn" onClick={() => setConfirmKind("delete")} aria-label="Eliminar" style={{ background: "var(--expense-soft)" }}>
-              <Icon name="Trash2" size={19} stroke={2} color="var(--expense)" />
+            <button className="icon-btn" onClick={() => setConfirmKind("delete")} aria-label="Eliminar" style={{ border: "1.5px solid var(--ink)" }}>
+              <Icon name="Trash2" size={19} stroke={1.75} color="var(--expense)" />
             </button>
           )}
           <button className="icon-btn" onClick={requestClose} aria-label="Cerrar">
-            <Icon name="X" size={22} stroke={2.2} color="var(--text-2)" />
+            <Icon name="X" size={22} stroke={1.75} color="var(--text)" />
           </button>
         </div>
       )}
 
         {confirmKind ? null : panel === "cats" ? (
-          <div className="app-scroll" style={{ flex: 1, overflowY: "auto", padding: "6px 18px 20px" }}>
-            <div className="cat-grid">
+          <div className="app-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 24px" }}>
+            <div className="cat-grid" style={{ gap: 8 }}>
               {cats.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => { setCatId(c.id); setPanel("pad"); }}
                   className="cat-card"
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 6px", borderRadius: 16, background: catId === c.id ? `color-mix(in srgb, ${c.color} 14%, var(--surface))` : "var(--surface)", border: catId === c.id ? `2px solid ${c.color}` : "1px solid var(--line)", cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 8px", minWidth: 0, background: "var(--surface)", border: "1.5px solid var(--ink)", outline: catId === c.id ? "3px solid var(--violet)" : "none", cursor: "pointer", fontFamily: "inherit" }}
                 >
-                  <CatBubble icon={c.icon} color={c.color} size={48} stroke={2} />
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)", textAlign: "center" }}>{c.name}</span>
+                  <CatBubble icon={c.icon} color={c.color} size={48} stroke={1.75} active={catId === c.id} />
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text)", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
           <div className="app-scroll" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
-            <div style={{ padding: "6px 22px 14px", textAlign: "right" }}>
-              {hasOp && <div className="tnum" style={{ fontSize: 14, color: "var(--text-3)", fontWeight: 700, height: 18 }}>{expr.slice(0, 1) + expr.slice(1).replace(/×/g, " × ").replace(/÷/g, " ÷ ").replace(/\+/g, " + ").replace(/−/g, " − ").replace(/\./g, ",")} =</div>}
-              <div className="num tnum" style={{ fontSize: 44, fontWeight: 600, color: result > 0 ? accent : "var(--text-3)", lineHeight: 1.1 }}>
+            <div style={{ margin: "0 16px 8px", padding: "8px 12px", textAlign: "right", background: "var(--surface)", border: "1.5px solid var(--ink)", minWidth: 0 }}>
+              {hasOp && <div className="tnum" style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 500, height: 16, lineHeight: "16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{expr.slice(0, 1) + expr.slice(1).replace(/×/g, " × ").replace(/÷/g, " ÷ ").replace(/\+/g, " + ").replace(/−/g, " − ").replace(/\./g, ",")} =</div>}
+              <div className="display" style={{ fontSize: 48, color: result > 0 ? accent : "var(--text-2)", overflow: "hidden", whiteSpace: "nowrap" }}>
                 {hasOp ? fmt(Math.round(result * 100) / 100, currency) : expr === "" ? sym + " 0" : sym + " " + expr.replace(/\./g, ",")}
               </div>
             </div>
 
-            <div style={{ padding: "0 18px 12px", display: "flex", flexDirection: "column", gap: 10, flex: "0 0 auto" }}>
+            <div style={{ padding: "0 16px 8px", display: "flex", flexDirection: "column", gap: 8, flex: "0 0 auto" }}>
               <button
                 onClick={() => setPanel("cats")}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14, width: "100%", background: "var(--bg-2)", border: "1px solid var(--line)", cursor: "pointer", fontFamily: "inherit" }}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 12px 4px 4px", minHeight: 48, width: "100%", background: "var(--surface)", border: "1.5px solid var(--ink)", cursor: "pointer", fontFamily: "inherit" }}
               >
                 {cat ? (
-                  <CatBubble icon={cat.icon} color={cat.color} size={38} stroke={2} />
+                  <CatBubble icon={cat.icon} color={cat.color} size={38} stroke={1.75} />
                 ) : (
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", display: "grid", placeItems: "center", background: "var(--surface)", border: "1px dashed var(--line-strong)" }}>
-                    <Icon name="Shapes" size={19} stroke={2} color="var(--text-3)" />
+                  <div style={{ width: 38, height: 38, display: "grid", placeItems: "center", background: "var(--bg-2)", border: "1.5px dashed var(--ink)" }}>
+                    <Icon name="Shapes" size={19} stroke={1.75} color="var(--text-2)" />
                   </div>
                 )}
-                <span style={{ flex: 1, textAlign: "left", fontWeight: 700, fontSize: 15, color: cat ? "var(--text)" : "var(--text-3)" }}>{cat ? cat.name : "Elegir categoría"}</span>
-                <Icon name="ChevronRight" size={20} stroke={2.2} color="var(--text-3)" />
+                <span style={{ flex: 1, minWidth: 0, textAlign: "left", fontWeight: 500, fontSize: 14, color: cat ? "var(--text)" : "var(--text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat ? cat.name : "Elegir categoría"}</span>
+                <Icon name="ChevronRight" size={20} stroke={1.75} color="var(--text)" />
               </button>
 
                 {type === "expense" && (
@@ -311,32 +307,33 @@ function EntryForm({
                   />
                 )}
 
-                <div style={{ display: "flex", gap: 10 }}>
-                  <div className="field-wrap" style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--line)" }}>
-                    <Icon name="PenLine" size={17} stroke={2} color="var(--text-3)" />
-                    <input aria-label="Nota" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", fontFamily: "inherit", fontSize: 16, fontWeight: 600, color: "var(--text)" }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div className="field-wrap" style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 12px", minHeight: 48, background: "var(--surface)", border: "1.5px solid var(--ink)" }}>
+                    <Icon name="PenLine" size={17} stroke={1.75} color="var(--text-2)" />
+                    <input aria-label="Nota" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", fontFamily: "inherit", fontSize: 16, fontWeight: 500, color: "var(--text)" }} />
                   </div>
-                  <label className="field-wrap" style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 12px", borderRadius: 14, background: "var(--bg-2)", border: "1px solid var(--line)", cursor: "pointer", minWidth: 0, flex: "0 1 auto" }}>
-                    <Icon name="Calendar" size={17} stroke={2} color="var(--text-3)" />
+                  <label className="field-wrap" style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px", minHeight: 48, background: "var(--surface)", border: "1.5px solid var(--ink)", cursor: "pointer", minWidth: 0, flex: "0 1 auto" }}>
+                    <Icon name="Calendar" size={17} stroke={1.75} color="var(--text-2)" />
                     <input type="date" aria-label="Fecha" value={date} onChange={(e) => setDate(e.target.value)} style={{ border: "none", background: "transparent", fontFamily: "inherit", fontSize: 16, fontWeight: 700, color: "var(--text)", minWidth: 0 }} />
                   </label>
                 </div>
             </div>
 
-            <div style={{ padding: "4px 18px 18px", flex: "0 0 auto" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 9 }}>
-                <Key accent={accent} label="7" onClick={() => push("7")} /><Key accent={accent} label="8" onClick={() => push("8")} /><Key accent={accent} label="9" onClick={() => push("9")} /><Key accent={accent} label="÷" variant="op" onClick={() => push("÷")} />
-                <Key accent={accent} label="4" onClick={() => push("4")} /><Key accent={accent} label="5" onClick={() => push("5")} /><Key accent={accent} label="6" onClick={() => push("6")} /><Key accent={accent} label="×" variant="op" onClick={() => push("×")} />
-                <Key accent={accent} label="1" onClick={() => push("1")} /><Key accent={accent} label="2" onClick={() => push("2")} /><Key accent={accent} label="3" onClick={() => push("3")} /><Key accent={accent} label="−" variant="op" onClick={() => push("−")} />
-                <Key accent={accent} label="," onClick={() => push(".")} /><Key accent={accent} label="0" onClick={() => push("0")} /><Key accent={accent} label={<Icon name="Delete" size={22} stroke={2} color="var(--text-2)" />} onClick={back} /><Key accent={accent} label="+" variant="op" onClick={() => push("+")} />
-                <Key accent={accent} label="=" variant="op" span={4} onClick={equals} />
+            <div style={{ padding: "0 16px 16px", flex: "0 0 auto" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, background: "var(--ink)", border: "1.5px solid var(--ink)" }}>
+                <Key label="7" onClick={() => push("7")} /><Key label="8" onClick={() => push("8")} /><Key label="9" onClick={() => push("9")} /><Key label="÷" variant="op" onClick={() => push("÷")} />
+                <Key label="4" onClick={() => push("4")} /><Key label="5" onClick={() => push("5")} /><Key label="6" onClick={() => push("6")} /><Key label="×" variant="op" onClick={() => push("×")} />
+                <Key label="1" onClick={() => push("1")} /><Key label="2" onClick={() => push("2")} /><Key label="3" onClick={() => push("3")} /><Key label="−" variant="op" onClick={() => push("−")} />
+                <Key label="," onClick={() => push(".")} /><Key label="0" onClick={() => push("0")} /><Key label={<Icon name="Delete" size={22} stroke={1.75} color="var(--text)" />} onClick={back} /><Key label="+" variant="op" onClick={() => push("+")} />
+                <Key label="=" variant="op" span={4} onClick={equals} />
               </div>
               <button
                 onClick={confirm}
                 disabled={!canSave}
-                style={{ marginTop: 12, width: "100%", padding: "15px", borderRadius: 14, border: "none", fontFamily: "inherit", background: canSave ? fill : "var(--bg-2)", color: canSave ? onFill : "var(--text-3)", fontWeight: 800, fontSize: 16, cursor: canSave ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}
+                className="btn btn-block"
+                style={{ marginTop: 8, minHeight: 48, fontSize: 14, fontWeight: 700, ...(canSave ? { background: fill, color: onFill, borderColor: fill } : {}) }}
               >
-                <Icon name="Check" size={20} stroke={2.6} color={canSave ? onFill : "var(--text-3)"} />
+                <Icon name="Check" size={20} stroke={2} color={canSave ? onFill : "var(--text-2)"} />
                 {fromSub
                   ? `Registrar pago · ${fmtDayMonth(effectiveDate)}`
                   : edit

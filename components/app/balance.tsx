@@ -39,9 +39,9 @@ function BalanceError() {
       <span className="caption">No se pudo calcular tu saldo</span>
       <button
         onClick={retryHistory}
-        style={{ minHeight: 44, padding: "0 10px", border: "none", background: "transparent", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+        style={{ minHeight: 44, padding: "0 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
       >
-        Reintentar
+        <span className="link" style={{ fontSize: 13 }}>Reintentar</span>
       </button>
     </div>
   );
@@ -62,9 +62,10 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
   if (loadError) return null;
 
   const loading = sim === "loading" || (rangePending && visibleTx.length === 0);
-  const GAP = 6;
-  const PAD = 19; // padding horizontal (8 + 8) + borde (1,5 + 1,5)
-  const maxPx = large ? 24 : 17;
+  const GAP = 0; // las celdas van pegadas
+  const FRAME = 3; // marco exterior (1,5 + 1,5)
+  const PAD = 17.5; // padding horizontal (8 + 8) + borde izquierdo de la celda (1,5)
+  const maxPx = large ? 30 : 22;
 
   const full = {
     income: fmt(totals.income, currency),
@@ -75,7 +76,7 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
     income: fmtShort(totals.income, currency),
     expense: fmtShort(totals.expense, currency),
     // fmtShort no pone "+": se agrega a mano para que coincida con el monto completo
-    balance: (totals.balance > 0 ? "+\u00a0" : "") + fmtShort(totals.balance, currency),
+    balance: (totals.balance > 0 ? "+ " : "") + fmtShort(totals.balance, currency),
   };
 
   // Ancho útil de cada celda según la medida real de la fila (columnas 2fr | 1,15fr
@@ -83,19 +84,19 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
   let fontSize = 14;
   let useShort = false;
   if (box.width > 0) {
-    const cols = Math.max(box.width - GAP, 0);
+    const cols = Math.max(box.width - FRAME - GAP, 0);
     const radioCol = (cols * 2) / 3.15;
     const incExpAvail = Math.max((radioCol - GAP) / 2 - PAD, 0);
     const balAvail = Math.max((cols * 1.15) / 3.15 - PAD, 0);
     const avails = [incExpAvail, incExpAvail, balAvail];
     const texts = [full.income, full.expense, full.balance];
-    const raw = Math.min(...texts.map((t, i) => fitFontSize(t, avails[i], maxPx, 0)));
+    const raw = Math.min(...texts.map((t, i) => fitFontSize(t, avails[i], maxPx, 0, 0.5)));
     if (raw >= 12) {
       fontSize = raw;
     } else {
       useShort = true;
       const shorts = [short.income, short.expense, short.balance];
-      fontSize = Math.min(...shorts.map((t, i) => fitFontSize(t, avails[i], maxPx, 12)));
+      fontSize = Math.min(...shorts.map((t, i) => fitFontSize(t, avails[i], maxPx, 12, 0.5)));
     }
   }
 
@@ -126,33 +127,33 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
     display: "flex",
     flexDirection: "column" as const,
     justifyContent: "center",
-    gap: 1,
-    minHeight: 48,
+    gap: 4,
+    minHeight: 56,
     minWidth: 0,
-    padding: "6px 8px",
-    borderRadius: 12,
+    padding: "8px",
     textAlign: "left" as const,
     fontFamily: "inherit",
   };
-  const labelStyle = { fontSize: 11, lineHeight: "14px", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" as const };
-  const amountStyle = { fontSize, lineHeight: 1.2, fontWeight: 600, whiteSpace: "nowrap" as const };
+  const labelStyle = { fontSize: 11, lineHeight: "14px", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" as const, overflow: "hidden" };
+  const amountStyle = { fontSize, lineHeight: 1.1, whiteSpace: "nowrap" as const };
+  const frame = { border: "1.5px solid var(--ink)", background: "var(--surface)", width: "100%" };
 
   if (loading) {
     return (
-      <div ref={ref} aria-busy="true" role="status" aria-label="Calculando el período" style={{ display: "grid", gridTemplateColumns: "2fr 1.15fr", gap: GAP, width: "100%" }}>
+      <div ref={ref} aria-busy="true" role="status" aria-label="Calculando el período" style={{ display: "grid", gridTemplateColumns: "2fr 1.15fr", gap: GAP, ...frame }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: GAP }}>
-          <div className="skeleton-row" style={{ height: 48 }} />
-          <div className="skeleton-row" style={{ height: 48 }} />
+          <div className="skeleton-row" style={{ height: 56 }} />
+          <div className="skeleton-row" style={{ height: 56, borderLeft: "1.5px solid var(--ink)" }} />
         </div>
-        <div className="skeleton-row" style={{ height: 48 }} />
+        <div className="skeleton-row" style={{ height: 56, borderLeft: "1.5px solid var(--ink)" }} />
       </div>
     );
   }
 
   return (
-    <div ref={ref} style={{ display: "grid", gridTemplateColumns: "2fr 1.15fr", gap: GAP, width: "100%" }}>
+    <div ref={ref} style={{ display: "grid", gridTemplateColumns: "2fr 1.15fr", gap: GAP, ...frame }}>
       <div role="radiogroup" aria-label="Mostrar en el gráfico" onKeyDown={onKeyDown} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: GAP }}>
-        {FOCUS_OPTIONS.map((o) => {
+        {FOCUS_OPTIONS.map((o, i) => {
           const on = focus === o.value;
           const key = o.value === "income" ? "income" : "expense";
           return (
@@ -162,27 +163,27 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               onClick={() => setFocus(o.value)}
+              className={on ? "is-inv" : undefined}
               style={{
                 ...cellBase,
                 cursor: "pointer",
-                background: on ? "var(--surface)" : "var(--bg-2)",
-                border: on ? "1.5px solid var(--line-strong)" : "1.5px solid transparent",
-                boxShadow: on ? `inset 0 -3px 0 ${o.dot}` : "none",
+                background: on ? undefined : "transparent",
+                border: "none",
+                borderLeft: i === 0 ? "none" : "1.5px solid var(--ink)",
                 color: "var(--text)",
               }}
             >
-              <span className="eyebrow" style={{ ...labelStyle, fontWeight: on ? 800 : 700 }}>
-                <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: o.dot, flex: "0 0 auto" }} />
+              <span className="eyebrow" style={{ ...labelStyle, fontWeight: on ? 700 : 500 }}>
                 {o.label}
               </span>
-              <span className="num tnum" style={{ ...amountStyle, color: o.value === "income" ? "var(--income)" : "var(--expense)" }}>
+              <span className="display" style={{ ...amountStyle, color: o.value === "income" ? "var(--income)" : "var(--expense)" }}>
                 {amountText(key)}
               </span>
             </button>
           );
         })}
       </div>
-      <div style={{ ...cellBase, background: "transparent", border: "1.5px solid var(--line)", cursor: "default" }}>
+      <div style={{ ...cellBase, background: "transparent", borderLeft: "1.5px solid var(--ink)", cursor: "default" }}>
         <span className="eyebrow" style={labelStyle}>
           {large ? (
             balName
@@ -193,7 +194,7 @@ export function PeriodSummary({ large = false }: { large?: boolean }) {
             </>
           )}
         </span>
-        <span className="num tnum" style={{ ...amountStyle, color: signedColor(totals.balance) }}>
+        <span className="display" style={{ ...amountStyle, color: signedColor(totals.balance) }}>
           {amountText("balance")}
         </span>
       </div>
@@ -223,9 +224,12 @@ export function Monedero() {
     });
   };
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 16px" }}>
-      <ActionButton kind="expense" size={46} onClick={() => openEntry("expense")} />
-      <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: 2 }}>
+    <div style={{ display: "flex", alignItems: "stretch", height: 56 }}>
+      <ActionButton kind="expense" size={56} onClick={() => openEntry("expense")} />
+      <div
+        className="is-lime"
+        style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: 0, borderLeft: "1.5px solid var(--ink)", borderRight: "1.5px solid var(--ink)" }}
+      >
         {available.status === "error" ? (
           <BalanceError />
         ) : (
@@ -234,18 +238,18 @@ export function Monedero() {
               onClick={() => setOpen(true)}
               aria-haspopup="dialog"
               aria-label={available.status === "loading" ? "Ver saldo, calculando" : hidden ? "Ver saldo" : `Ver saldo. Disponible hoy: ${fmt(available.amount, currency)}`}
-              style={{ minHeight: 44, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", color: "var(--text)" }}
+              style={{ minHeight: 44, minWidth: 0, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "2px 4px", color: "var(--text)" }}
             >
-              <span className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10.5 }}>
+              <span className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11 }}>
                 <Coin size={14} sprout={available.status === "ready" && available.monthNet > 0} />
                 Disponible hoy
               </span>
               {available.status === "loading" ? (
-                <span className="skeleton-row" style={{ width: 96, height: 20, borderRadius: 8, marginTop: 3 }} role="status" aria-label="Calculando saldo" />
+                <span className="skeleton-row" style={{ width: 96, height: 22 }} role="status" aria-label="Calculando saldo" />
               ) : (
                 <span
                   className="num-coin"
-                  style={{ fontSize: "clamp(18px, 5.6vw, 21px)", lineHeight: 1.15, whiteSpace: "nowrap", color: !hidden && available.amount < 0 ? "var(--expense)" : "var(--text)" }}
+                  style={{ fontSize: "clamp(22px, 6.4vw, 26px)", lineHeight: 1, whiteSpace: "nowrap", color: !hidden && available.amount < 0 ? "var(--expense)" : "var(--text)" }}
                 >
                   {hidden ? "••••••" : fmt(available.amount, currency)}
                 </span>
@@ -256,14 +260,14 @@ export function Monedero() {
               aria-label={hidden ? "Mostrar disponible" : "Ocultar disponible"}
               aria-pressed={hidden}
               className="icon-btn"
-              style={{ width: 36, height: 36, minWidth: 36, display: "grid", placeItems: "center", border: "none", background: "transparent", cursor: "pointer", padding: 0, alignSelf: "flex-end" }}
+              style={{ flex: "0 0 auto" }}
             >
-              <Icon name={hidden ? "EyeOff" : "Eye"} size={17} stroke={2.2} color="var(--text-2)" />
+              <Icon name={hidden ? "EyeOff" : "Eye"} size={18} stroke={1.75} color="var(--text)" />
             </button>
           </>
         )}
       </div>
-      <ActionButton kind="income" size={46} onClick={() => openEntry("income")} />
+      <ActionButton kind="income" size={56} onClick={() => openEntry("income")} />
       {open && <BalanceSheet onClose={() => setOpen(false)} />}
     </div>
   );
@@ -276,7 +280,7 @@ export function BalanceCard() {
   const { currency, available } = useStore();
   const [open, setOpen] = useState(false);
   return (
-    <div className="card-hero" style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+    <div className="card-hero is-lime" style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
       <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Coin size={20} sprout={available.status === "ready" && available.monthNet > 0} />
         Disponible hoy
@@ -284,10 +288,10 @@ export function BalanceCard() {
       {available.status === "error" ? (
         <BalanceError />
       ) : available.status === "loading" ? (
-        <div className="skeleton-row" role="status" aria-label="Calculando saldo" style={{ height: 52, width: 220 }} />
+        <div className="skeleton-row" role="status" aria-label="Calculando saldo" style={{ height: 64, width: 220 }} />
       ) : (
         <>
-          <div className="num-coin" style={{ fontSize: 44, lineHeight: 1.1, color: available.amount < 0 ? "var(--expense)" : "var(--text)" }}>
+          <div className="num-coin" style={{ fontSize: 64, lineHeight: 1, color: available.amount < 0 ? "var(--expense)" : "var(--text)", overflowWrap: "anywhere" }}>
             {fmt(available.amount, currency)}
           </div>
           <div className="caption">Todo lo que registraste hasta hoy.</div>
@@ -302,10 +306,11 @@ export function BalanceCard() {
         <button
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
-          style={{ alignSelf: "flex-start", minHeight: 44, marginTop: 2, padding: "0 2px", border: "none", background: "transparent", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}
+          className="btn"
+          style={{ alignSelf: "flex-start", marginTop: 8 }}
         >
           Ver desglose
-          <Icon name="ChevronRight" size={16} stroke={2.4} color="var(--accent-ink)" />
+          <Icon name="ChevronRight" size={16} stroke={1.75} color="var(--text)" />
         </button>
       )}
       {open && <BalanceSheet onClose={() => setOpen(false)} />}
@@ -335,9 +340,13 @@ function rowLabel(unit: BucketUnit, start: Date, end: Date, now: Date): string {
 
 function Line({ label, value, strong = false, color }: { label: string; value: string; strong?: boolean; color?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "6px 0" }}>
-      <span style={{ fontSize: 15, fontWeight: strong ? 800 : 600, color: strong ? "var(--text)" : "var(--text-2)" }}>{label}</span>
-      <span className="amount" style={{ fontWeight: strong ? 700 : 600, color: color ?? "var(--text)", fontSize: strong ? 20 : 16, whiteSpace: "nowrap" }}>{value}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, padding: "4px 0" }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: strong ? 700 : 400, color: "var(--text)", overflowWrap: "anywhere" }}>{label}</span>
+      {strong ? (
+        <span className="display" style={{ fontSize: 24, color: color ?? "var(--text)", whiteSpace: "nowrap", flex: "0 0 auto" }}>{value}</span>
+      ) : (
+        <span className="amount" style={{ color: color ?? "var(--text)", whiteSpace: "nowrap", flex: "0 0 auto" }}>{value}</span>
+      )}
     </div>
   );
 }
@@ -373,7 +382,7 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
     <Sheet label="Tu saldo" onClose={onClose} style={{ maxHeight: "94dvh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <SheetHeader title="Tu saldo" onClose={onClose} />
       <div className="app-scroll" style={{ padding: "6px 20px calc(22px + env(safe-area-inset-bottom))", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column", gap: 16, minHeight: 0 }}>
-        <div className="card" style={{ padding: "12px 16px" }}>
+        <div className="card is-lime" style={{ padding: "12px 16px" }}>
           <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Coin size={18} sprout={available.status === "ready" && available.monthNet > 0} />
             Disponible hoy
@@ -382,7 +391,7 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
           {available.status === "error" && <BalanceError />}
           {available.status === "ready" && (
             <>
-              <div className="num-coin" style={{ fontSize: 32, lineHeight: 1.15, marginTop: 4, color: available.amount < 0 ? "var(--expense)" : "var(--text)" }}>
+              <div className="num-coin" style={{ fontSize: 40, lineHeight: 1, marginTop: 8, overflowWrap: "anywhere", color: available.amount < 0 ? "var(--expense)" : "var(--text)" }}>
                 {fmt(available.amount, currency)}
               </div>
               {available.amount < 0 && <div className="caption" style={{ color: "var(--expense)" }}>Gastaste más de lo que tenías.</div>}
@@ -391,7 +400,8 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
                   setScreen("ajustes");
                   onClose();
                 }}
-                style={{ minHeight: 44, padding: 0, border: "none", background: "transparent", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}
+                className="link"
+                style={{ minHeight: 44, padding: 0, border: "none", background: "transparent", fontSize: 13, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}
               >
                 ¿No coincide? Ajustalo
               </button>
@@ -400,15 +410,15 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div className="eyebrow">Período · {rangeLabel}</div>
+          <div className="eyebrow bracket">Período · {rangeLabel}</div>
           {carry.status === "loading" && <div className="skeleton-row" role="status" aria-label="Calculando período" />}
           {carry.status === "error" && <BalanceError />}
           {carry.status === "ready" && (
-            <div className="card" style={{ padding: "10px 16px" }}>
+            <div className="card" style={{ padding: "8px 16px" }}>
               <Line label={`Saldo al inicio (${shortDateLabel(addDays(range.start, -1), now)})`} value={fmt(carry.opening, currency)} />
               <Line label={`+ Ingresos de ${lowerRange}${untilToday}`} value={fmt(carry.income, currency)} color="var(--income)" />
               <Line label={`− Gastos de ${lowerRange}${untilToday}`} value={fmt(carry.expense, currency)} color="var(--expense)" />
-              <div style={{ height: 1, background: "var(--line-strong)", margin: "6px 0" }} />
+              <div className="rule-strong" style={{ margin: "8px 0" }} />
               <Line label={`= ${closingLabel}`} value={fmt(carry.closing, currency)} strong color={carry.closing < 0 ? "var(--expense)" : undefined} />
             </div>
           )}
@@ -431,7 +441,7 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
         {activeUnit && carry.status === "ready" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div className="eyebrow">Desglose</div>
+              <div className="eyebrow bracket">Desglose</div>
               {units.length > 1 && (
                 <div style={{ width: 220 }}>
                   <Segmented<BucketUnit> label="Agrupar" value={activeUnit} onChange={setUnit} options={units.map((u) => ({ value: u, label: UNIT_LABEL[u] }))} />
@@ -445,16 +455,16 @@ export function BalanceSheet({ onClose }: { onClose: () => void }) {
                 {withMoves.map((r) => (
                   <li
                     key={r.key}
-                    style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "10px 2px", borderTop: "1px solid var(--line)", opacity: r.future ? 0.65 : 1 }}
+                    style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "8px 2px", borderTop: "1px solid var(--line)", opacity: r.future ? 0.65 : 1 }}
                   >
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700 }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500 }}>
                       {rowLabel(activeUnit, r.start, r.end, now)}
                       {r.future && <span className="caption" style={{ marginLeft: 6 }}>previsto</span>}
                     </span>
-                    <span className="amount tnum" style={{ color: signedColor(r.net), fontSize: 15 }}>
+                    <span className="amount tnum" style={{ color: signedColor(r.net), fontSize: 13 }}>
                       {fmt(r.net, currency, { sign: true })}
                     </span>
-                    <span className="caption tnum" style={{ minWidth: 76, textAlign: "right" }} title="Saldo al cierre">
+                    <span className="caption tnum" style={{ minWidth: 72, textAlign: "right" }} title="Saldo al cierre">
                       {fmtShort(r.closing, currency)}
                     </span>
                   </li>

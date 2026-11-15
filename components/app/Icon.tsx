@@ -22,7 +22,9 @@ export function Icon({
   return (
     <Cmp
       size={size}
-      strokeWidth={stroke}
+      strokeWidth={Math.min(stroke, 1.75)}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       color={color}
       className={className}
       style={style}
@@ -51,15 +53,13 @@ export function CatBubble({
   const s: CSSProperties = {
     width: size,
     height: size,
-    borderRadius: "50%",
     display: "grid",
     placeItems: "center",
     flex: "0 0 auto",
-    background: `color-mix(in srgb, ${color} 16%, var(--surface))`,
-    border: `1.5px solid color-mix(in srgb, ${color} ${active ? 70 : 38}%, transparent)`,
-    color,
+    background: color,
+    border: "1.5px solid var(--ink)",
     cursor: onClick ? "pointer" : "default",
-    transition: "transform .15s ease, border-color .15s, background .15s",
+    ...(active ? { outline: "3px solid var(--violet)", outlineOffset: 2 } : null),
   };
   return (
     <div
@@ -69,7 +69,7 @@ export function CatBubble({
       style={s}
       className="cat-bubble"
     >
-      <Icon name={icon} size={Math.round(size * 0.48)} stroke={stroke} color={`color-mix(in srgb, ${color} var(--glyph-mix), var(--text))`} />
+      <Icon name={icon} size={Math.round(size * 0.48)} stroke={stroke} color="var(--on-cat)" />
     </div>
   );
 }

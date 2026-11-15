@@ -12,30 +12,31 @@ import { Ajustes } from "./screen-ajustes";
 import { NewEntryModal } from "./modal-new-entry";
 import { Toast } from "./ui";
 
-const NAV: { id: Screen; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Resumen", icon: "ChartPie" },
-  { id: "movimientos", label: "Movimientos", icon: "List" },
-  { id: "calendario", label: "Calendario", icon: "CalendarDays" },
-  { id: "recurrentes", label: "Fijos", icon: "Repeat" },
-  { id: "categorias", label: "Categorías", icon: "Tags" },
-  { id: "ajustes", label: "Ajustes", icon: "Settings" },
+const NAV: { id: Screen; label: string; icon: string; n: string; short: string }[] = [
+  { id: "dashboard", label: "Resumen", icon: "ChartPie", n: "01", short: "Resumen" },
+  { id: "movimientos", label: "Movimientos", icon: "List", n: "02", short: "Movs." },
+  { id: "calendario", label: "Calendario", icon: "CalendarDays", n: "03", short: "Calendario" },
+  { id: "recurrentes", label: "Fijos", icon: "Repeat", n: "04", short: "Fijos" },
+  { id: "categorias", label: "Categorías", icon: "Tags", n: "05", short: "Categorías" },
+  { id: "ajustes", label: "Ajustes", icon: "Settings", n: "06", short: "Ajustes" },
 ];
 // Móvil: 5 pestañas (Categorías es configuración de baja frecuencia y se abre
 // desde Ajustes). El desktop conserva las 6 en el sidebar.
 const NAV_MOBILE = NAV.filter((n) => n.id !== "categorias");
 
+// Marca en tipografía del sistema: imagen cuadrada con borde + UNA_MONEDITA en mono.
 function Logo({ size = 30 }: { size?: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo.png"
         alt=""
         width={size}
         height={size}
-        style={{ width: size, height: size, borderRadius: size * 0.3, flex: "0 0 auto", objectFit: "cover" }}
+        style={{ width: size, height: size, flex: "0 0 auto", objectFit: "cover", border: "1.5px solid var(--ink)" }}
       />
-      <span style={{ fontWeight: 800, fontSize: size * 0.55 }}>UnaMonedita</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: Math.round(size * 0.45), letterSpacing: "0.04em" }}>UNA_MONEDITA</span>
     </div>
   );
 }
@@ -59,19 +60,27 @@ function ScreenBody({ screen }: { screen: Screen }) {
 
 function MobileLayout() {
   const { screen, setScreen, openEntry } = useStore();
-  const title = screen === "dashboard" ? null : NAV.find((n) => n.id === screen)?.label;
+  const current = NAV.find((n) => n.id === screen);
+  const title = screen === "dashboard" ? null : current?.label;
   // Categorías cuelga de Ajustes: la pestaña activa sigue siendo Ajustes.
   const activeTab: Screen = screen === "categorias" ? "ajustes" : screen;
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(10px, calc(env(safe-area-inset-top) - 8px)) 16px 4px", minHeight: 56, flex: "0 0 auto" }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(10px, calc(env(safe-area-inset-top) - 8px)) 16px 4px", minHeight: 56, flex: "0 0 auto", borderBottom: "1.5px solid var(--ink)", background: "var(--surface)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0 }}>
           {screen === "categorias" && (
             <button className="icon-btn" onClick={() => setScreen("ajustes")} aria-label="Volver a Ajustes" style={{ marginLeft: -10 }}>
               <Icon name="ChevronLeft" size={22} stroke={2.4} color="var(--text-2)" />
             </button>
           )}
-          {screen === "dashboard" ? <Logo size={28} /> : <h1 className="num" style={{ fontWeight: 600, fontSize: 24, margin: 0 }}>{title}</h1>}
+          {screen === "dashboard" ? (
+            <Logo size={28} />
+          ) : (
+            <>
+              <span aria-hidden="true" className="kicker" style={{ fontSize: 12, marginRight: 8 }}>/{current?.n}</span>
+              <h1 className="display" style={{ fontSize: 26, margin: 0 }}>{title}</h1>
+            </>
+          )}
         </div>
         {screen === "movimientos" && (
           <button className="icon-btn" onClick={() => openEntry("expense")} aria-label="Agregar gasto">
@@ -82,22 +91,23 @@ function MobileLayout() {
       <main style={{ flex: 1, minHeight: 0 }}>
         <ScreenBody screen={screen} />
       </main>
-      <nav aria-label="Secciones" className="mobile-nav" style={{ display: "flex", borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto" }}>
-        {NAV_MOBILE.map((n) => {
+      <nav aria-label="Secciones" className="mobile-nav" style={{ display: "flex", borderTop: "1.5px solid var(--ink)", background: "var(--surface)", flex: "0 0 auto" }}>
+        {NAV_MOBILE.map((n, i) => {
           const on = activeTab === n.id;
           return (
             <button
               key={n.id}
               onClick={() => setScreen(n.id)}
               aria-current={on ? "page" : undefined}
-              style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "6px 0 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
+              aria-label={n.short !== n.label ? n.label : undefined}
+              style={{ flex: 1, minWidth: 0, minHeight: 52, display: "flex", padding: 0, border: "none", borderLeft: i === 0 ? "none" : "1px solid var(--line)", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}
             >
               <span
-                style={{ width: 56, height: 30, borderRadius: 15, display: "grid", placeItems: "center", background: on ? "var(--accent-soft)" : "transparent", transition: "background .15s" }}
+                style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "6px 0", background: on ? "var(--ink)" : "transparent", color: on ? "var(--paper)" : "var(--text)" }}
               >
-                <Icon name={n.icon} size={20} stroke={on ? 2.4 : 2} color={on ? "var(--accent-ink)" : "var(--text-2)"} />
+                <Icon name={n.icon} size={20} stroke={1.75} color={on ? "var(--paper)" : "var(--text)"} />
+                <span style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", whiteSpace: "nowrap" }}>{n.short}</span>
               </span>
-              <span style={{ fontSize: 11, fontWeight: on ? 800 : 700, color: on ? "var(--accent-ink)" : "var(--text-2)", whiteSpace: "nowrap" }}>{n.label}</span>
             </button>
           );
         })}
@@ -108,21 +118,37 @@ function MobileLayout() {
   );
 }
 
+// Encabezado de las pantallas desktop: "/0N — Nombre" + titular Anton.
+function PageHead({ id }: { id: Screen }) {
+  const n = NAV.find((x) => x.id === id);
+  if (!n) return null;
+  return (
+    <>
+      <div className="sec-label">/{n.n} — {n.label}</div>
+      <h1 className="display" style={{ fontSize: 56, margin: "8px 0 24px" }}>{n.label}</h1>
+    </>
+  );
+}
+
 function DesktopLayout() {
-  const { screen, setScreen, openEntry } = useStore();
+  const { screen, setScreen, openEntry, today, currency } = useStore();
+  const [y, m, d] = today.split("-");
+  const stackBtn = { width: "100%", minHeight: 48, justifyContent: "flex-start" } as const;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "236px 1fr", height: "100%" }}>
-      <aside style={{ borderRight: "1px solid var(--line)", background: "var(--surface)", padding: "22px 16px", display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ padding: "0 6px" }}><Logo size={30} /></div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button onClick={() => openEntry("expense")} title="Agregar gasto (G)" className="fab-btn" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: "12px", minHeight: 44, borderRadius: 12, background: "var(--expense-fill)", color: "var(--on-expense)", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-            <Icon name="Minus" size={18} stroke={3} color="var(--on-expense)" /> Agregar gasto
+      <aside style={{ borderRight: "1.5px solid var(--ink)", background: "var(--surface)", padding: 0, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <div style={{ padding: "20px 16px", borderBottom: "1.5px solid var(--ink)" }}><Logo size={30} /></div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <button onClick={() => openEntry("expense")} title="Agregar gasto (G)" className="btn btn-accent fab-btn" style={stackBtn}>
+            <Icon name="Minus" size={18} stroke={1.75} color="currentColor" /> Agregar gasto
+            <span aria-hidden="true" style={{ marginLeft: "auto", fontSize: 11, fontWeight: 500 }}>[G]</span>
           </button>
-          <button onClick={() => openEntry("income")} title="Agregar ingreso (I)" className="fab-btn" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: "12px", minHeight: 44, borderRadius: 12, background: "var(--income-fill)", color: "var(--on-income)", fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-            <Icon name="Plus" size={18} stroke={3} color="var(--on-income)" /> Agregar ingreso
+          <button onClick={() => openEntry("income")} title="Agregar ingreso (I)" className="btn btn-primary fab-btn" style={stackBtn}>
+            <Icon name="Plus" size={18} stroke={1.75} color="currentColor" /> Agregar ingreso
+            <span aria-hidden="true" style={{ marginLeft: "auto", fontSize: 11, fontWeight: 500 }}>[I]</span>
           </button>
         </div>
-        <nav aria-label="Secciones" style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <nav aria-label="Secciones" style={{ display: "flex", flexDirection: "column", borderTop: "1.5px solid var(--ink)" }}>
           {NAV.map((n) => {
             const on = screen === n.id;
             return (
@@ -130,14 +156,20 @@ function DesktopLayout() {
                 key={n.id}
                 onClick={() => setScreen(n.id)}
                 aria-current={on ? "page" : undefined}
-                style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 12px", minHeight: 44, borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", background: on ? "var(--accent-soft)" : "transparent", color: on ? "var(--accent-ink)" : "var(--text-2)", fontWeight: on ? 800 : 700, fontSize: 14.5 }}
+                className={on ? "is-inv" : undefined}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", minHeight: 44, width: "100%", border: "none", borderBottom: "1px solid var(--line)", cursor: "pointer", fontFamily: "var(--font-mono)", textAlign: "left", background: on ? undefined : "transparent", color: "var(--text)", fontWeight: on ? 700 : 500, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em" }}
               >
-                <Icon name={n.icon} size={20} stroke={2} color={on ? "var(--accent-ink)" : "var(--text-2)"} />
+                <span aria-hidden="true" style={{ color: "var(--text-2)", fontWeight: 500 }}>/{n.n}</span>
+                <Icon name={n.icon} size={18} stroke={1.75} color="currentColor" />
                 {n.label}
               </button>
             );
           })}
         </nav>
+        <div className="statusbar" style={{ marginTop: "auto" }}>
+          <span className="dot" aria-hidden="true" />
+          {d}.{m}.{y} · {currency}
+        </div>
       </aside>
       <main style={{ minWidth: 0, overflow: "hidden" }}>
         {screen === "dashboard" && <DashboardDesktop />}
@@ -148,32 +180,32 @@ function DesktopLayout() {
         )}
         {screen === "movimientos" && (
           <div className="app-scroll" style={{ height: "100%", overflowY: "auto" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 32px" }}>
-              <h1 className="num" style={{ fontWeight: 600, fontSize: 28, margin: "0 0 12px" }}>Movimientos</h1>
+            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 40px" }}>
+              <PageHead id="movimientos" />
               <Movimientos />
             </div>
           </div>
         )}
         {screen === "recurrentes" && (
           <div className="app-scroll" style={{ height: "100%", overflowY: "auto" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 32px" }}>
-              <h1 className="num" style={{ fontWeight: 600, fontSize: 28, margin: "0 0 16px" }}>Fijos</h1>
+            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 40px" }}>
+              <PageHead id="recurrentes" />
               <Recurrentes />
             </div>
           </div>
         )}
         {screen === "categorias" && (
           <div className="app-scroll" style={{ height: "100%", overflowY: "auto" }}>
-            <div style={{ maxWidth: 880, margin: "0 auto", padding: "24px 24px 32px" }}>
-              <h1 className="num" style={{ fontWeight: 600, fontSize: 28, margin: "0 0 16px" }}>Categorías</h1>
+            <div style={{ maxWidth: 880, margin: "0 auto", padding: "24px 24px 40px" }}>
+              <PageHead id="categorias" />
               <Categorias />
             </div>
           </div>
         )}
         {screen === "ajustes" && (
           <div className="app-scroll" style={{ height: "100%", overflowY: "auto" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 32px" }}>
-              <h1 className="num" style={{ fontWeight: 600, fontSize: 28, margin: "0 0 16px" }}>Ajustes</h1>
+            <div style={{ maxWidth: 720, margin: "0 auto", padding: "24px 24px 40px" }}>
+              <PageHead id="ajustes" />
               <Ajustes />
             </div>
           </div>

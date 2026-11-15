@@ -56,7 +56,7 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
             padding: "8px 20px calc(20px + env(safe-area-inset-bottom))",
             display: "flex",
             flexDirection: "column",
-            gap: 20,
+            gap: 24,
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
@@ -65,7 +65,7 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-2)", marginBottom: 10 }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>
               Período
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
@@ -73,7 +73,8 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={() => setRangeOpen(true)}
-                style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "var(--accent-ink)", fontSize: 13, fontWeight: 800, padding: "12px 8px", minHeight: 44, textAlign: "left" }}
+                className="link"
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "12px 0", minHeight: 44, textAlign: "left" }}
               >
                 Rango personalizado… ({rangeLabel})
               </button>
@@ -81,7 +82,7 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-2)", marginBottom: 10 }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>
               Tipo
             </div>
             <Segmented
@@ -98,15 +99,16 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-2)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div className="eyebrow">
                 Categorías
               </div>
               {draft.cats.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setDraft((d) => ({ ...d, cats: [] }))}
-                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "var(--accent-ink)", fontSize: 13, fontWeight: 800, padding: "12px 8px", minHeight: 44 }}
+                  className="link"
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontSize: 13, padding: "12px 0", minHeight: 44 }}
                 >
                   Limpiar selección
                 </button>
@@ -130,38 +132,33 @@ export function FiltrosModal({ onClose }: { onClose: () => void }) {
                       flexDirection: "column",
                       alignItems: "center",
                       gap: 8,
-                      padding: "14px 6px",
-                      borderRadius: 16,
-                      background: on ? `color-mix(in srgb, ${c.color} 14%, var(--surface))` : "var(--surface)",
-                      border: on ? `2px solid ${c.color}` : "1px solid var(--line)",
+                      padding: "16px 8px",
+                      background: "var(--surface)",
+                      border: "1.5px solid var(--ink)",
+                      outline: on ? "3px solid var(--violet)" : "none",
+                      outlineOffset: -3,
                       cursor: "pointer",
                       fontFamily: "inherit",
                     }}
                   >
                     {on && (
-                      <div style={{ position: "absolute", top: 6, right: 6, width: 18, height: 18, borderRadius: "50%", background: c.color, display: "grid", placeItems: "center" }}>
-                        <Icon name="Check" size={12} stroke={3} color="var(--surface)" />
+                      <div style={{ position: "absolute", top: 6, right: 6, width: 18, height: 18, background: "var(--violet)", display: "grid", placeItems: "center" }}>
+                        <Icon name="Check" size={12} stroke={1.75} color="var(--on-violet)" />
                       </div>
                     )}
-                    <CatBubble icon={c.icon} color={c.color} size={44} stroke={2} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", textAlign: "center" }}>{c.name}</span>
+                    <CatBubble icon={c.icon} color={c.color} size={44} stroke={1.75} />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text)", textAlign: "center" }}>{c.name}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={clear}
-              style={{ flex: 1, padding: "14px", borderRadius: 12, border: "1.5px solid var(--line)", cursor: "pointer", fontFamily: "inherit", background: "var(--surface)", color: "var(--text-2)", fontWeight: 800, fontSize: 15 }}
-            >
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={clear} className="btn" style={{ flex: 1 }}>
               Limpiar filtros
             </button>
-            <button
-              onClick={apply}
-              style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: "inherit", background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 15 }}
-            >
+            <button onClick={apply} className="btn btn-primary" style={{ flex: 1 }}>
               Aplicar
             </button>
           </div>

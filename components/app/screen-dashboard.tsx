@@ -3,7 +3,7 @@
 import { useStore, type TxType } from "./store";
 import { CatBubble, Icon } from "./Icon";
 import { Donut } from "./Donut";
-import { PeriodPills, RangeNav, CenterBalance, StateView, BudgetAmount, BudgetBar, BUDGET_FILL } from "./ui";
+import { PeriodPills, RangeNav, CenterBalance, StateView, BudgetAmount, BudgetBar } from "./ui";
 import { Monedero, BalanceCard, PeriodSummary } from "./balance";
 import { useElementSize } from "./useElementSize";
 import { fmt, fmtShort } from "@/lib/format";
@@ -38,7 +38,7 @@ function Ring({ size }: { size: number }) {
         return (
           <div key={b.cat} style={{ position: "absolute", left: x, top: y, transform: "translate(-50%,-50%)", textAlign: "center" }}>
             <CatBubble icon={b.icon} color={b.color} size={bubble} stroke={2} title={b.name} />
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text-2)", marginTop: 3 }}>
+            <div className="num" style={{ fontSize: 11, color: "var(--text-2)", marginTop: 4 }}>
               <span className="sr-only">{b.name} </span>
               {Math.round(b.pct * 100)}%
             </div>
@@ -64,13 +64,19 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
   const showBudgets = focus === "expense" && isFullMonthRange(range);
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {breakdown.slice(0, limit).map((b) => {
+      {breakdown.slice(0, limit).map((b, i) => {
         const budget = showBudgets ? budgets.find((bd) => bd.categoryId === b.cat) : undefined;
         const state = budget && budget.limit > 0 ? budgetState(b.total, budget.limit, budget.alertAt80) : null;
         const over = state?.level === "over";
         const near = state?.level === "near";
-        const barColor = state ? BUDGET_FILL[state.level] : b.color;
         const pct = Math.round((state?.ratio ?? b.pct) * 100);
+        const pctInner = (
+          <>
+            {pct}%
+            {over && <span className="sr-only"> del presupuesto, superado</span>}
+            {near && <span className="sr-only"> del presupuesto, cerca del límite</span>}
+          </>
+        );
         return (
           <button
             key={b.cat}
@@ -79,10 +85,12 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
               display: "flex",
               alignItems: "center",
               gap: 12,
-              padding: compact ? "7px 6px" : "10px 6px",
+              padding: compact ? "8px 4px" : "12px 4px",
               minHeight: 44,
               border: "none",
+              borderTop: i === 0 ? "none" : "1px solid var(--line)",
               background: "transparent",
+              color: "var(--text)",
               cursor: "pointer",
               fontFamily: "inherit",
               textAlign: "left",
@@ -91,26 +99,29 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
           >
             <CatBubble icon={b.icon} color={b.color} size={compact ? 34 : 40} stroke={2} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{b.name}</span>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, gap: 8 }}>
+                <span style={{ fontWeight: 500, fontSize: 13, color: "var(--text)", minWidth: 0, overflowWrap: "anywhere" }}>{b.name}</span>
+                <span style={{ fontSize: 13, flex: "0 0 auto" }}>
                   {budget && state ? (
                     <BudgetAmount spent={b.total} limit={budget.limit} level={state.level} />
                   ) : (
-                    <span className="num tnum" style={{ color: "var(--text)" }}>{fmt(b.total, currency)}</span>
+                    <span className="num tnum" style={{ color: "var(--text)", fontSize: 13 }}>{fmt(b.total, currency)}</span>
                   )}
                 </span>
               </div>
-              <div style={{ height: 5, borderRadius: 999, background: "var(--bg-2)", overflow: "hidden" }}>
-                <div style={{ width: (state?.ratio ?? b.pct) * 100 + "%", height: "100%", borderRadius: 999, background: barColor }} />
-              </div>
+              {state ? (
+                <BudgetBar ratio={state.ratio} level={state.level} height={8} />
+              ) : (
+                <div className="track" style={{ height: 8 }}>
+                  <div className="fill" style={{ width: b.pct * 100 + "%", background: b.color }} />
+                </div>
+              )}
             </div>
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 3, fontSize: 12, fontWeight: 800, color: over ? "var(--expense)" : near ? "var(--warn)" : "var(--text-2)", minWidth: 40 }}>
-              {(over || near) && <Icon name="TriangleAlert" size={14} stroke={2.4} color={over ? "var(--expense)" : "var(--warn)"} />}
-              {pct}%
-              {over && <span className="sr-only"> del presupuesto, superado</span>}
-              {near && <span className="sr-only"> del presupuesto, cerca del límite</span>}
-            </span>
+            {over || near ? (
+              <span className={over ? "tag inv" : "tag"} style={{ flex: "0 0 auto" }}>{pctInner}</span>
+            ) : (
+              <span className="num" style={{ fontSize: 12, color: "var(--text-2)", minWidth: 40, textAlign: "right", flex: "0 0 auto" }}>{pctInner}</span>
+            )}
           </button>
         );
       })}
@@ -120,10 +131,10 @@ export function LegendList({ limit = 99, compact = false }: { limit?: number; co
 
 function StatTile({ label, value, color = "var(--text)", icon }: { label: string; value: string; color?: string; icon?: string }) {
   return (
-    <div className="card" style={{ flex: "1 1 130px", padding: "10px 12px" }}>
-      <div className="eyebrow" style={{ color: "var(--text-2)" }}>{label}</div>
-      <div className="num tnum" style={{ fontSize: 16, fontWeight: 600, color, marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
-        {icon && <Icon name={icon} size={16} stroke={2.4} color={color} />}
+    <div className="card" style={{ flex: "1 1 130px", minWidth: 0 }}>
+      <div className="eyebrow">{label}</div>
+      <div className="display" style={{ fontSize: 24, color, marginTop: 8, display: "flex", alignItems: "center", gap: 8, overflowWrap: "anywhere" }}>
+        {icon && <Icon name={icon} size={20} stroke={1.75} color={color} />}
         {value}
       </div>
     </div>
@@ -243,15 +254,15 @@ export function DashboardMobile() {
             const bud = showBudgets ? budgets.find((x) => x.categoryId === b.cat) : undefined;
             const state = bud && bud.limit > 0 ? budgetState(b.total, bud.limit, bud.alertAt80) : null;
             return (
-              <div key={b.cat} className="card" style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 11px" }}>
+              <div key={b.cat} className="card" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}>
                 <CatBubble icon={b.icon} color={b.color} size={34} stroke={2} />
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.name}</div>
+                  <div style={{ fontSize: 12 }}>
                     {bud && state ? (
                       <BudgetAmount spent={b.total} limit={bud.limit} level={state.level} sep="/" short />
                     ) : (
-                      <span className="num tnum" style={{ color: "var(--text-2)" }}>{`${Math.round(b.pct * 100)}% · ${fmtShort(b.total, currency)}`}</span>
+                      <span className="num tnum" style={{ color: "var(--text-2)", fontSize: 12 }}>{`${Math.round(b.pct * 100)}% · ${fmtShort(b.total, currency)}`}</span>
                     )}
                   </div>
                   {state && <BudgetBar ratio={state.ratio} level={state.level} height={4} style={{ marginTop: 4 }} />}
@@ -269,7 +280,7 @@ export function DashboardMobile() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ padding: "4px 16px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: "0 0 auto" }}>
+      <div style={{ padding: "8px 16px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: "0 0 auto" }}>
         <PeriodPills />
         <RangeNav />
       </div>
@@ -278,7 +289,7 @@ export function DashboardMobile() {
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>{body}</div>
       {showMonedero && (
-        <div style={{ borderTop: "1px solid var(--line)", background: "var(--surface)", flex: "0 0 auto" }}>
+        <div style={{ borderTop: "1.5px solid var(--ink)", flex: "0 0 auto" }}>
           <Monedero />
         </div>
       )}
@@ -307,12 +318,17 @@ export function DashboardDesktop() {
     );
   } else
     center = (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 56, flexWrap: "wrap", padding: "8px 0 16px" }}>
-        <Donut segments={breakdown.map((b) => ({ value: b.total, color: b.color, cat: b.cat }))} size={300} thickness={32} label={donutLabel(focus, breakdown)}>
-          <CenterBalance scale={1.28} />
-        </Donut>
-        <div style={{ width: 280, maxWidth: "40vw" }}>
-          <LegendList limit={8} />
+      <div className="card" style={{ padding: 24 }}>
+        <div className="eyebrow bracket" style={{ marginBottom: 16 }}>
+          {focus === "expense" ? "Gastos por categoría" : "Ingresos por categoría"}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 40, flexWrap: "wrap" }}>
+          <Donut segments={breakdown.map((b) => ({ value: b.total, color: b.color, cat: b.cat }))} size={300} thickness={32} label={donutLabel(focus, breakdown)}>
+            <CenterBalance scale={1.28} />
+          </Donut>
+          <div style={{ width: 320, maxWidth: "100%", flex: "0 1 320px" }}>
+            <LegendList limit={8} />
+          </div>
         </div>
       </div>
     );
@@ -320,15 +336,21 @@ export function DashboardDesktop() {
   const showBalance = !loadError && sim === "normal";
   return (
     <div className="app-scroll" style={{ height: "100%", overflowY: "auto" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 18, padding: "26px 32px", minHeight: "100%" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <RangeNav center={false} />
-          <PeriodPills />
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "24px 32px 40px", minHeight: "100%" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div className="sec-label">/01 — Resumen</div>
+            <h1 className="display" style={{ fontSize: 56, margin: "8px 0 0" }}>Resumen</h1>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <RangeNav center={false} />
+            <PeriodPills />
+          </div>
         </div>
         {showBalance && (
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap", padding: 8 }}>
             <div style={{ flex: "1 1 320px", minWidth: 0 }}><BalanceCard /></div>
-            <div style={{ flex: "2 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ flex: "2 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
               <PeriodSummary large />
               {showStats && <ComparativeStats />}
             </div>

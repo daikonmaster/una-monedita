@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStore, failureText, type DashStyle, type Accent, type AppCurrency } from "./store";
+import { useStore, failureText, type DashStyle, type AppCurrency } from "./store";
 import { Icon } from "./Icon";
 import { Coin } from "./Coin";
 import { SegmentedControl } from "./ui";
@@ -39,7 +39,6 @@ function NotionSection() {
           : status.remember
             ? "Conectado · recordado en este dispositivo"
             : "Conectado";
-  const statusColor = connected ? "var(--accent-ink)" : "var(--text-3)";
 
   // Borra la conexión de este dispositivo (la cookie). Solo si el servidor
   // confirma se sale a /setup: si falla, la conexión sigue y se avisa.
@@ -59,45 +58,43 @@ function NotionSection() {
 
   return (
     <Row label="Notion" hint="Tu base de datos personal. Duplicá la plantilla y conectá tu cuenta.">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: statusColor }} />
-          <span style={{ fontWeight: 800, fontSize: 14, color: statusColor }}>{statusLabel}</span>
+          <span className="dot" style={connected ? undefined : { background: "var(--text-2)" }} />
+          <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text)", minWidth: 0 }}>
+            {statusLabel}
+          </span>
         </div>
 
-        <a
-          href={NOTION_TEMPLATE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontWeight: 700, fontSize: 13.5, textDecoration: "none", fontFamily: "inherit" }}
-        >
-          <Icon name="Globe" size={16} stroke={2.2} />
+        <a href={NOTION_TEMPLATE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-block">
+          <Icon name="Globe" size={16} stroke={1.75} />
           Abrir plantilla de Notion
+          <span aria-hidden="true">↗</span>
         </a>
 
         <button
+          className="btn btn-primary btn-block"
           onClick={() => {
             window.location.href = "/setup";
           }}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", minHeight: 44, borderRadius: 12, border: "1.5px solid var(--accent)", background: "var(--accent-soft)", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}
         >
-          <Icon name="Plug" size={16} stroke={2.2} color="var(--accent-ink)" />
+          <Icon name="Plug" size={16} stroke={1.75} color="var(--paper)" />
           {connected ? "Cambiar de cuenta de Notion" : "Conectar Notion"}
         </button>
 
         {connected && status?.via !== "dev" && (
           <>
             <button
+              className="btn btn-accent btn-block"
               onClick={() => {
                 setError(null);
                 setConfirming(true);
               }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", minHeight: 44, borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--expense)", fontWeight: 800, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}
             >
-              <Icon name="LogOut" size={16} stroke={2.2} color="var(--expense)" />
+              <Icon name="LogOut" size={16} stroke={1.75} color="var(--on-violet)" />
               Desconectar Notion
             </button>
-            <div className="caption" style={{ color: "var(--text-3)" }}>
+            <div className="caption">
               Si perdés un dispositivo: en notion.so/my-integrations regenerá el token de la integración y volvé a conectar.
             </div>
           </>
@@ -107,7 +104,7 @@ function NotionSection() {
       {confirming && (
         <Sheet label="Desconectar Notion" onClose={() => (busy ? undefined : setConfirming(false))}>
           <SheetHeader title="Desconectar Notion" onClose={() => (busy ? undefined : setConfirming(false))} />
-          <div style={{ padding: "6px 20px calc(22px + env(safe-area-inset-bottom))", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ padding: "8px 24px calc(24px + env(safe-area-inset-bottom))", display: "flex", flexDirection: "column", gap: 8 }}>
             <ConfirmRow
               question="¿Desconectar Notion de este dispositivo?"
               detail="Tus datos quedan en Notion. Para volver a entrar necesitás tu token y la URL de la página."
@@ -117,8 +114,8 @@ function NotionSection() {
               onConfirm={disconnect}
             />
             {error && (
-              <div role="alert" style={{ fontSize: 13, fontWeight: 700, color: "var(--expense)", textAlign: "center", lineHeight: 1.4 }}>
-                {error}
+              <div role="alert" className="caption" style={{ textAlign: "center" }}>
+                <span className="tag inv" style={{ whiteSpace: "normal" }}>{error}</span>
               </div>
             )}
           </div>
@@ -195,60 +192,55 @@ function MantenimientoSection() {
 
   return (
     <Row label="Mantenimiento" hint="Preparar la base de Notion para gastos fijos y mantener la guía que lee tu agente (Hermes) al día.">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button
-          onClick={runMigrate}
-          disabled={migrateState.kind === "busy"}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontWeight: 700, fontSize: 13.5, cursor: migrateState.kind === "busy" ? "not-allowed" : "pointer", fontFamily: "inherit" }}
-        >
-          <Icon name="Database" size={16} stroke={2.2} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <button className="btn btn-block" onClick={runMigrate} disabled={migrateState.kind === "busy"}>
+          <Icon name="Database" size={16} stroke={1.75} />
           {migrateState.kind === "busy" ? "Preparando..." : "Preparar Notion"}
         </button>
         {migrateState.kind === "ok" && (
-          <div style={{ fontSize: 12, color: "var(--accent-ink)", fontWeight: 700 }}>{migrateState.message}</div>
+          <div className="caption">
+            <span className="tag" style={{ whiteSpace: "normal" }}>{migrateState.message}</span>
+          </div>
         )}
         {migrateState.kind === "error" && (
-          <div style={{ fontSize: 12, color: "var(--expense)", fontWeight: 700 }}>{migrateState.message}</div>
+          <div className="caption">
+            <span className="tag inv" style={{ whiteSpace: "normal" }}>{migrateState.message}</span>
+          </div>
         )}
 
-        <button
-          onClick={runPublishGuide}
-          disabled={guideState.kind === "busy"}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", fontWeight: 700, fontSize: 13.5, cursor: guideState.kind === "busy" ? "not-allowed" : "pointer", fontFamily: "inherit" }}
-        >
-          <Icon name="BookOpen" size={16} stroke={2.2} />
+        <button className="btn btn-block" onClick={runPublishGuide} disabled={guideState.kind === "busy"}>
+          <Icon name="BookOpen" size={16} stroke={1.75} />
           {guideState.kind === "busy" ? "Publicando..." : "Publicar guía para agentes"}
         </button>
         {guideState.kind === "ok" && (
-          <a href={guideState.message} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--accent-ink)", fontWeight: 700, wordBreak: "break-all" }}>
-            {guideState.message}
+          <a href={guideState.message} target="_blank" rel="noopener noreferrer" className="link" style={{ fontSize: 12, wordBreak: "break-all" }}>
+            {guideState.message} ↗
           </a>
         )}
         {guideState.kind === "error" && (
-          <div style={{ fontSize: 12, color: "var(--expense)", fontWeight: 700, wordBreak: "break-word", lineHeight: 1.4 }}>{guideState.message}</div>
+          <div className="caption">
+            <span className="tag inv" style={{ whiteSpace: "normal", wordBreak: "break-word" }}>{guideState.message}</span>
+          </div>
         )}
 
-        <button
-          onClick={toggleConn}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "9px 4px", border: "none", background: "transparent", color: "var(--text-3)", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}
-        >
+        <button className="btn btn-ghost btn-block" onClick={toggleConn} style={{ justifyContent: "space-between" }}>
           Datos de conexión
-          <Icon name={showConn ? "ChevronUp" : "ChevronDown"} size={15} stroke={2.2} />
+          <Icon name={showConn ? "ChevronUp" : "ChevronDown"} size={15} stroke={1.75} />
         </button>
         {showConn && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", borderRadius: 10, background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
-            {connLoading && <div style={{ color: "var(--text-3)" }}>Cargando...</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 12px", border: "1px solid var(--line)", background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 12, overflowWrap: "anywhere" }}>
+            {connLoading && <div style={{ color: "var(--text-2)" }}>Cargando...</div>}
             {!connLoading && conn && (
               <>
-                <div style={{ color: "var(--text-3)" }}>Página principal: {conn.parentPageId ?? "—"}</div>
+                <div style={{ color: "var(--text-2)" }}>Página principal: {conn.parentPageId ?? "—"}</div>
                 {Object.entries(conn.dbIds).map(([key, id]) => (
-                  <div key={key} style={{ color: "var(--text-2)" }}>
+                  <div key={key} style={{ color: "var(--text)" }}>
                     {DB_ID_LABELS[key] ?? key}: {id || "—"}
                   </div>
                 ))}
               </>
             )}
-            {!connLoading && !conn && <div style={{ color: "var(--text-3)" }}>No disponible</div>}
+            {!connLoading && !conn && <div style={{ color: "var(--text-2)" }}>No disponible</div>}
           </div>
         )}
       </div>
@@ -256,13 +248,21 @@ function MantenimientoSection() {
   );
 }
 
+// Grupo de ajustes: subtítulo entre corchetes + una sola tarjeta sin padding,
+// con la ayuda como última fila separada por hairline.
 function Row({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div className="eyebrow">{label}</div>
-      {children}
-      {hint && <div className="caption" style={{ color: "var(--text-3)" }}>{hint}</div>}
-    </div>
+    <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="eyebrow bracket">{label}</div>
+      <div className="card" style={{ padding: 0 }}>
+        <div style={{ padding: 16 }}>{children}</div>
+        {hint && (
+          <div className="caption" style={{ padding: "8px 16px", borderTop: "1px solid var(--line)" }}>
+            {hint}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -312,33 +312,32 @@ function SaldoSection() {
       label="Saldo"
       hint="Lo que pongas acá es lo que tenés hoy. Desde ahí, cada gasto resta y cada ingreso suma, y el número no cambia al pasar de mes."
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 16, borderBottom: "1px solid var(--line)" }}>
           <Coin size={30} sprout={available.status === "ready" && available.monthNet > 0} />
           <div style={{ minWidth: 0 }}>
             <div className="eyebrow">Disponible hoy</div>
             {available.status === "loading" && <div className="skeleton-row" role="status" aria-label="Calculando saldo" style={{ height: 28, width: 140, marginTop: 4 }} />}
             {available.status === "error" && (
-              <div role="alert" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13, fontWeight: 700, color: "var(--expense)", lineHeight: 1.4 }}>
-                No se pudo calcular tu saldo.
-                <button
-                  onClick={retryHistory}
-                  style={{ minHeight: 44, padding: "0 6px", border: "none", background: "transparent", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
-                >
+              <div role="alert" className="caption" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span className="tag inv">No se pudo calcular tu saldo.</span>
+                <button className="btn btn-ghost" onClick={retryHistory}>
                   Reintentar
                 </button>
               </div>
             )}
             {available.status === "ready" && (
-              <div className="num-coin" style={{ fontSize: 26, lineHeight: 1.2, color: available.amount < 0 ? "var(--expense)" : "var(--text)" }}>
+              <div className="display" style={{ fontSize: 28, lineHeight: 1.1, color: available.amount < 0 ? "var(--expense)" : "var(--text)" }}>
                 {fmt(available.amount, currency)}
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label htmlFor="plata-hoy" style={{ fontWeight: 800, fontSize: 14 }}>¿Cuánta plata tenés hoy? (efectivo + banco)</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label htmlFor="plata-hoy" className="eyebrow" style={{ color: "var(--text)" }}>
+            ¿Cuánta plata tenés hoy? (efectivo + banco)
+          </label>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               id="plata-hoy"
@@ -353,38 +352,31 @@ function SaldoSection() {
                 if (e.key === "Enter" && canSave) void save();
               }}
               placeholder="Ej: 1000"
-              style={{ flex: 1, minWidth: 0, minHeight: 48, border: "1px solid var(--line)", background: "var(--bg-2)", borderRadius: 12, padding: "12px 14px", fontFamily: "inherit", fontSize: 16, fontWeight: 700, color: "var(--text)" }}
+              className="field"
+              style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700 }}
             />
-            <button
-              onClick={save}
-              disabled={!canSave}
-              style={{ minHeight: 48, padding: "0 18px", borderRadius: 12, border: "none", background: canSave ? "var(--accent)" : "var(--bg-2)", color: canSave ? "var(--on-accent)" : "var(--text-3)", fontWeight: 800, fontSize: 14.5, cursor: canSave ? "pointer" : "not-allowed", fontFamily: "inherit" }}
-            >
+            <button className="btn btn-primary" onClick={save} disabled={!canSave} style={{ minHeight: 48 }}>
               {busy ? "Guardando…" : "Guardar"}
             </button>
           </div>
-          {reason && <div className="caption" style={{ color: "var(--text-3)" }}>{reason}</div>}
+          {reason && <div className="caption">{reason}</div>}
           {msg && (
-            <div role={msg.ok ? "status" : "alert"} style={{ fontSize: 13, fontWeight: 700, color: msg.ok ? "var(--income)" : "var(--expense)", lineHeight: 1.4 }}>
-              {msg.text}
+            <div role={msg.ok ? "status" : "alert"} className="caption">
+              <span className={msg.ok ? "tag" : "tag inv"} style={{ whiteSpace: "normal" }}>{msg.text}</span>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setHowOpen((o) => !o)}
-            aria-expanded={howOpen}
-            style={{ minHeight: 44, display: "flex", alignItems: "center", gap: 4, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "var(--accent-ink)", fontWeight: 800, fontSize: 13.5, padding: "0 2px", textAlign: "left" }}
-          >
+          <button className="btn btn-ghost" onClick={() => setHowOpen((o) => !o)} aria-expanded={howOpen}>
             Cómo se calcula
-            <Icon name={howOpen ? "ChevronUp" : "ChevronDown"} size={15} stroke={2.4} color="var(--accent-ink)" />
+            <Icon name={howOpen ? "ChevronUp" : "ChevronDown"} size={15} stroke={1.75} />
           </button>
           {howOpen && (
-            <div className="caption" style={{ display: "flex", flexDirection: "column", gap: 6, lineHeight: 1.5 }}>
+            <div className="caption" style={{ display: "flex", flexDirection: "column", gap: 8, lineHeight: 1.5 }}>
               <span>Disponible hoy = saldo inicial + ingresos − gastos de todo lo fechado hasta hoy.</span>
               <span>
-                Saldo inicial guardado: <strong style={{ color: "var(--text)" }}>{initialBalance === null ? "…" : fmt(initialBalance, currency)}</strong>. Se calcula solo al guardar lo que tenés hoy, y puede ser negativo.
+                Saldo inicial guardado: <strong style={{ color: "var(--text)", fontWeight: 700 }}>{initialBalance === null ? "…" : fmt(initialBalance, currency)}</strong>. Se calcula solo al guardar lo que tenés hoy, y puede ser negativo.
               </span>
               {available.status === "ready" && available.futureCount > 0 && (
                 <span>
@@ -401,18 +393,19 @@ function SaldoSection() {
 }
 
 export function Ajustes() {
-  const { theme, setTheme, dashStyle, setDashStyle, accent, setAccent, currency, setCurrency, setScreen } = useStore();
+  const { theme, setTheme, dashStyle, setDashStyle, currency, setCurrency, setScreen } = useStore();
 
   return (
-    <div className="app-scroll" style={{ height: "100%", overflowY: "auto", padding: "8px 18px 28px" }}>
+    <div className="app-scroll" style={{ height: "100%", overflowY: "auto", padding: "8px 16px 24px" }}>
       <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
         <button
+          className="card"
           onClick={() => setScreen("categorias")}
-          style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", minHeight: 52, borderRadius: 14, border: "1px solid var(--line)", background: "var(--surface)", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "var(--text)" }}
+          style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 52, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "var(--text)" }}
         >
-          <Icon name="Tags" size={20} stroke={2} color="var(--text-2)" />
-          <span style={{ flex: 1, fontWeight: 800, fontSize: 15 }}>Categorías y presupuestos</span>
-          <Icon name="ChevronRight" size={20} stroke={2.2} color="var(--text-3)" />
+          <Icon name="Tags" size={20} stroke={1.75} color="var(--text)" />
+          <span style={{ flex: 1, fontWeight: 500, fontSize: 14, minWidth: 0 }}>Categorías y presupuestos</span>
+          <Icon name="ChevronRight" size={20} stroke={1.75} color="var(--text)" />
         </button>
 
         <Row label="Moneda" hint="Usada al registrar nuevos movimientos">
@@ -425,19 +418,11 @@ export function Ajustes() {
           <Pills label="Tema" value={theme} onChange={setTheme} options={[{ value: "system", label: "Automático" }, { value: "light", label: "Claro" }, { value: "dark", label: "Oscuro" }]} />
         </Row>
 
-        <Row label="Acento">
-          <Pills label="Acento" value={accent} onChange={(v) => setAccent(v as Accent)} options={[{ value: "verde", label: "Verde" }, { value: "teal", label: "Turquesa" }, { value: "grafito", label: "Grafito" }]} />
-        </Row>
-
         <Row label="Estilo del resumen" hint="Cómo se ve el Resumen en el celular.">
           <Pills label="Estilo del resumen" value={dashStyle} onChange={(v) => setDashStyle(v as DashStyle)} options={[{ value: "A", label: "Anillo" }, { value: "B", label: "Leyenda" }, { value: "C", label: "Grilla" }]} />
         </Row>
 
-        <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
-
         <NotionSection />
-
-        <div style={{ height: 1, background: "var(--line)", margin: "4px 0" }} />
 
         <MantenimientoSection />
       </div>

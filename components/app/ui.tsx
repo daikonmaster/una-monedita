@@ -22,9 +22,9 @@ const PERIOD_ITEMS: { value: Period; label: string }[] = [
   { value: "Año", label: "Año" },
 ];
 
-// Único estilo de selección de la app: pista --bg-2, opción elegida sobre
-// --surface con borde, sin sombras ni colores de marca. El estado se comunica
-// con peso + fondo + aria-checked, no solo con color.
+// Único estilo de selección de la app: marco de tinta, opción elegida invertida
+// (todo el estilo vive en .seg de globals.css). El estado se comunica con
+// inversión + peso + aria-checked, no solo con color.
 // Patrón radio de ARIA: un solo tab stop (la opción elegida, o la primera si no
 // hay ninguna) y las flechas mueven la selección.
 export function SegmentedControl<T extends string>({
@@ -56,39 +56,12 @@ export function SegmentedControl<T extends string>({
   }
 
   return (
-    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} style={{ display: "flex", gap: 3, background: "var(--bg-2)", padding: 3, borderRadius: 999, width: stretch ? "100%" : undefined }}>
+    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className={"seg" + (stretch ? " stretch" : "")}>
       {options.map((o, i) => {
         const on = o.value === value;
         return (
-          <button
-            key={o.value}
-            role="radio"
-            aria-checked={on}
-            tabIndex={i === tabStop ? 0 : -1}
-            onClick={() => onChange(o.value)}
-            style={{
-              flex: stretch ? 1 : undefined,
-              // con 4 opciones (medio de pago) en un celular angosto el texto no entra
-              // en el ancho de su contenido: que las opciones se repartan parejo
-              minWidth: stretch ? 0 : undefined,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 7,
-              padding: "8px 14px",
-              minHeight: 36,
-              borderRadius: 999,
-              fontSize: 13.5,
-              fontWeight: on ? 800 : 700,
-              border: on ? "1px solid var(--line)" : "1px solid transparent",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              color: on ? "var(--text)" : "var(--text-2)",
-              background: on ? "var(--surface)" : "transparent",
-              transition: "background .15s, color .15s",
-            }}
-          >
-            {o.dot && <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: o.dot, flex: "0 0 auto" }} />}
+          <button key={o.value} role="radio" aria-checked={on} tabIndex={i === tabStop ? 0 : -1} onClick={() => onChange(o.value)}>
+            {o.dot && <span aria-hidden="true" className="dot" style={{ background: o.dot }} />}
             {o.label}
           </button>
         );
@@ -130,8 +103,8 @@ export function MonthNav({ center = true }: { center?: boolean }) {
       <button className="icon-btn" onClick={() => navMonth(-1)} aria-label="Mes anterior">
         <Icon name="ChevronLeft" size={20} stroke={2.4} color="var(--text-2)" />
       </button>
-      <div style={{ minWidth: 132, textAlign: "center", fontWeight: 800, fontSize: 16 }}>
-        {MONTHS_FULL[month]} <span style={{ color: "var(--text-3)", fontWeight: 700 }}>{year}</span>
+      <div style={{ minWidth: 132, textAlign: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        {MONTHS_FULL[month]} <span style={{ color: "var(--text-2)" }}>{year}</span>
       </div>
       <button className="icon-btn" onClick={() => navMonth(1)} aria-label="Mes siguiente">
         <Icon name="ChevronRight" size={20} stroke={2.4} color="var(--text-2)" />
@@ -155,11 +128,10 @@ export function RangeNav({ center = true }: { center?: boolean }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label={`Elegir período, ${rangeLabel}`}
-        className="num"
-        style={{ minWidth: 132, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 600, fontSize: 16, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", color: "var(--text)", padding: "4px 6px" }}
+        style={{ minWidth: 132, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", border: "1.5px solid var(--ink)", background: "var(--surface)", cursor: "pointer", fontFamily: "var(--font-mono)", color: "var(--text)", padding: "0 12px" }}
       >
         {rangeLabel}
-        <Icon name="ChevronDown" size={14} stroke={2.4} color="var(--text-3)" />
+        <Icon name="ChevronDown" size={14} stroke={2.4} color="var(--text-2)" />
       </button>
       <button className="icon-btn" onClick={() => navRange(1)} aria-label="Período siguiente">
         <Icon name="ChevronRight" size={20} stroke={2.4} color="var(--text-2)" />
@@ -179,16 +151,16 @@ export function CenterBalance({ scale = 1 }: { scale?: number }) {
   const isExpense = focus === "expense";
   const amount = isExpense ? totals.expense : totals.income;
   const fullText = fmt(amount, currency);
-  const maxPx = 34 * scale;
-  const fullSize = fitFontSize(fullText, avail, maxPx, 12);
+  const maxPx = 40 * scale;
+  const fullSize = fitFontSize(fullText, avail, maxPx, 12, 0.5);
   const useShort = fullSize < 14;
   const shortText = fmtShort(amount, currency);
-  const size = useShort ? fitFontSize(shortText, avail, maxPx, 12) : fullSize;
+  const size = useShort ? fitFontSize(shortText, avail, maxPx, 12, 0.5) : fullSize;
   const caption = rangeLabel.toLowerCase();
   return (
     <div>
       <div className="eyebrow" style={{ color: "var(--text-2)" }}>{isExpense ? "Gastos" : "Ingresos"}</div>
-      <div className="num" style={{ fontSize: size, fontWeight: 600, lineHeight: 1.04, color: "var(--text)", marginTop: 2, whiteSpace: "nowrap" }}>
+      <div className="display" style={{ fontSize: size, lineHeight: 1.04, color: "var(--text)", marginTop: 2, whiteSpace: "nowrap" }}>
         {useShort ? (
           <>
             <span aria-hidden="true">{shortText}</span>
@@ -200,7 +172,7 @@ export function CenterBalance({ scale = 1 }: { scale?: number }) {
       </div>
       <div
         className="caption"
-        style={{ marginTop: 4, fontSize: fitFontSize(caption, avail, 13, 11, 0.55), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+        style={{ marginTop: 4, fontSize: fitFontSize(caption, avail, 13, 11, 0.62), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
       >
         {caption}
       </div>
@@ -208,38 +180,40 @@ export function CenterBalance({ scale = 1 }: { scale?: number }) {
   );
 }
 
-// Colores del estado de un presupuesto (ver lib/budget.ts). El texto usa los
-// tokens AA (`--income`/`--expense`); las barras, los de relleno.
+// Estado de un presupuesto (ver lib/budget.ts): ok = violeta, near = violeta con
+// trama (ver .track .fill.near), over = tinta llena. El texto del límite en
+// "over" va como chip invertido (ver BudgetAmount).
 export const BUDGET_TEXT: Record<BudgetLevel, string> = {
-  ok: "var(--income)",
-  near: "var(--warn)",
-  over: "var(--expense)",
+  ok: "var(--text)",
+  near: "var(--violet)",
+  over: "var(--text)",
 };
 export const BUDGET_FILL: Record<BudgetLevel, string> = {
-  ok: "var(--income-fill)",
-  near: "var(--warn)",
-  over: "var(--expense-fill)",
+  ok: "var(--violet)",
+  near: "var(--violet)",
+  over: "var(--ink)",
 };
 
 // Barra de avance contra el límite. `ratio` ya viene recortado a 0..1.
 export function BudgetBar({ ratio, level, height = 5, style }: { ratio: number; level: BudgetLevel; height?: number; style?: CSSProperties }) {
+  const width = ratio * 100 + "%";
   return (
-    <div aria-hidden="true" style={{ height, borderRadius: 999, background: "var(--bg-2)", overflow: "hidden", ...style }}>
-      <div style={{ width: ratio * 100 + "%", height: "100%", borderRadius: 999, background: BUDGET_FILL[level] }} />
+    <div aria-hidden="true" className="track" style={{ height: Math.max(height, 8), ...style }}>
+      <div className={"fill" + (level === "near" ? " near" : level === "over" ? " over" : "")} style={{ width }} />
     </div>
   );
 }
 
-// "€ 6,20 de € 30,00": lo gastado queda neutro y SOLO el límite lleva el color
-// del estado, así a simple vista se distingue cuál es el tope y cuál lo gastado.
+// "€ 6,20 de € 30,00": lo gastado queda neutro; el límite se marca según el
+// estado (violeta cerca del tope, chip invertido al superarlo).
 export function BudgetAmount({ spent, limit, level, sep = "de", short = false }: { spent: number; limit: number; level: BudgetLevel; sep?: "de" | "/"; short?: boolean }) {
   const { currency } = useStore();
   const f = short ? fmtShort : fmt;
   return (
     <span className="num tnum" style={{ whiteSpace: "nowrap" }}>
       <span style={{ color: "var(--text)" }}>{f(spent, currency)}</span>
-      <span style={{ color: "var(--text-3)" }}>{sep === "de" ? " de " : " / "}</span>
-      <span style={{ color: BUDGET_TEXT[level] }}>{f(limit, currency)}</span>
+      <span style={{ color: "var(--text-2)" }}>{sep === "de" ? " de " : " / "}</span>
+      <span style={level === "over" ? { background: "var(--ink)", color: "var(--paper)", padding: "0 4px" } : { color: BUDGET_TEXT[level] }}>{f(limit, currency)}</span>
     </span>
   );
 }
@@ -254,24 +228,21 @@ export function ActionButton({ kind, onClick, size = 60 }: { kind: "expense" | "
       style={{
         width: size,
         height: size,
-        borderRadius: "50%",
         display: "grid",
         placeItems: "center",
-        border: "none",
+        border: "1.5px solid var(--ink)",
         cursor: "pointer",
-        background: expense ? "var(--expense-fill)" : "var(--income-fill)",
-        color: expense ? "var(--on-expense)" : "var(--on-income)",
-        boxShadow: "var(--shadow-soft)",
-        transition: "filter .15s, transform .1s",
+        background: expense ? "var(--violet)" : "var(--ink)",
+        color: expense ? "var(--on-violet)" : "var(--paper)",
       }}
     >
-      <Icon name={expense ? "Minus" : "Plus"} size={Math.round(size * 0.46)} stroke={3} color={expense ? "var(--on-expense)" : "var(--on-income)"} />
+      <Icon name={expense ? "Minus" : "Plus"} size={Math.round(size * 0.46)} stroke={3} color={expense ? "var(--on-violet)" : "var(--paper)"} />
     </button>
   );
 }
 
-// Aviso flotante. Los errores no se cierran solos y llevan botón de cierre; los
-// éxitos desaparecen a los pocos segundos (el store los limpia).
+// Aviso flotante: bloque invertido. Los errores no se cierran solos y llevan
+// botón de cierre; los éxitos desaparecen a los pocos segundos (el store los limpia).
 export function Toast({ desktop }: { desktop: boolean }) {
   const { notice, dismissNotice } = useStore();
   if (!notice) return null;
@@ -279,7 +250,7 @@ export function Toast({ desktop }: { desktop: boolean }) {
   return (
     <div
       role={error ? "alert" : "status"}
-      className="card"
+      className="is-inv"
       style={{
         position: "fixed",
         zIndex: 80,
@@ -287,12 +258,10 @@ export function Toast({ desktop }: { desktop: boolean }) {
         alignItems: "center",
         gap: 10,
         padding: error ? "8px 6px 8px 14px" : "11px 16px",
-        boxShadow: "var(--shadow-soft)",
-        borderColor: "var(--line-strong)",
-        fontFamily: "var(--font-app), ui-sans-serif, system-ui, sans-serif",
-        color: "var(--text)",
-        fontWeight: 700,
-        fontSize: 14,
+        border: "1.5px solid var(--ink)",
+        fontFamily: "var(--font-mono)",
+        fontWeight: 500,
+        fontSize: 13,
         width: "max-content",
         maxWidth: "min(92vw, 420px)",
         ...(desktop
@@ -300,11 +269,12 @@ export function Toast({ desktop }: { desktop: boolean }) {
           : { left: "50%", transform: "translateX(-50%)", top: "calc(env(safe-area-inset-top) + 12px)" }),
       }}
     >
-      <Icon name={error ? "CircleAlert" : "CircleCheck"} size={18} stroke={2.2} color={error ? "var(--expense)" : "var(--income)"} />
+      <Icon name={error ? "CircleAlert" : "CircleCheck"} size={18} stroke={1.75} color="var(--paper)" />
+      <span aria-hidden="true" style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{error ? "ERROR" : "OK"}</span>
       <span style={{ lineHeight: 1.35 }}>{notice.text}</span>
       {error && (
         <button className="icon-btn" onClick={dismissNotice} aria-label="Cerrar aviso" style={{ flex: "0 0 auto" }}>
-          <Icon name="X" size={18} stroke={2.2} color="var(--text-2)" />
+          <Icon name="X" size={18} stroke={1.75} color="var(--paper)" />
         </button>
       )}
     </div>
@@ -326,9 +296,9 @@ export function StateView({
 }) {
   if (kind === "loading") {
     return (
-      <div role="status" aria-label="Cargando" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, gap: 18, height: "100%" }}>
+      <div role="status" aria-label="Cargando" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, gap: 16, height: "100%" }}>
         <div className="skeleton-donut" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "80%", maxWidth: 320 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "80%", maxWidth: 320 }}>
           {[0, 1, 2].map((i) => (
             <div key={i} className="skeleton-row" />
           ))}
@@ -343,29 +313,16 @@ export function StateView({
   const s = map[kind] || map.empty;
   const primaryAction = kind === "error" ? { label: "Reintentar", onClick: onRetry ?? (() => {}) } : action;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 32px", gap: 14, textAlign: "center", height: "100%" }}>
-      <div style={{ width: 76, height: 76, borderRadius: "50%", display: "grid", placeItems: "center", background: "var(--bg-2)", color: "var(--text-3)" }}>
-        <Icon name={s.icon} size={34} stroke={1.8} color="var(--text-3)" />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 32px", gap: 16, textAlign: "center", height: "100%" }}>
+      <div className="hatch" style={{ position: "relative", width: 72, height: 72, border: "1.5px solid var(--ink)", display: "grid", placeItems: "center", opacity: 0.9 }}>
+        <div style={{ width: 44, height: 44, background: "var(--surface)", border: "1.5px solid var(--ink)", display: "grid", placeItems: "center" }}>
+          <Icon name={s.icon} size={24} stroke={1.75} color="var(--text)" />
+        </div>
       </div>
-      <div style={{ fontWeight: 800, fontSize: 17 }}>{title ?? s.title}</div>
-      <div style={{ color: "var(--text-2)", fontSize: 15, maxWidth: 300, lineHeight: 1.5 }}>{message ?? s.body}</div>
+      <div className="display" style={{ fontSize: 28 }}>{title ?? s.title}</div>
+      <div style={{ color: "var(--text-2)", fontSize: 14, maxWidth: 300, lineHeight: 1.5 }}>{message ?? s.body}</div>
       {primaryAction && (
-        <button
-          onClick={primaryAction.onClick}
-          style={{
-            marginTop: 6,
-            padding: "12px 20px",
-            minHeight: 44,
-            borderRadius: 999,
-            border: "none",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            background: "var(--accent)",
-            color: "var(--on-accent)",
-            fontWeight: 800,
-            fontSize: 14,
-          }}
-        >
+        <button onClick={primaryAction.onClick} className="btn btn-primary" style={{ marginTop: 8 }}>
           {primaryAction.label}
         </button>
       )}

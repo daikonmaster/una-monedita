@@ -8,16 +8,6 @@ import { monthlyEquivalent, monthStatus, monthCounter, type SubMonthKind } from 
 import { SubEditor, type EditTarget } from "./modal-recurrente";
 import { MONTHS_FULL } from "./ui";
 
-const TONE_COLOR: Record<SubMonthKind, string> = {
-  late: "var(--expense)",
-  today: "var(--text-2)",
-  pending: "var(--text-2)",
-  paid: "var(--accent-ink)",
-  later: "var(--text-3)",
-  none: "var(--text-3)",
-  paused: "var(--text-3)",
-};
-
 // Estado de un fijo en el MES actual (ver monthStatus en lib/recurrence): el
 // contador y las filas arrancan de cero al cambiar de mes porque se calculan
 // contra el mes calendario, no contra "alguna vez se pagó".
@@ -50,34 +40,46 @@ function SubRow({ sub, today, onEdit, onPay }: { sub: UISub; today: string; onEd
   // el ✓ se destaca cuando hay algo para registrar este mes
   const actionable = st.kind === "late" || st.kind === "today" || st.kind === "pending";
   const freq = sub.frequency !== "Mensual" ? `${sub.frequency} · ` : "";
+  // chip del estado: pagado = .tag, pendiente / vencido = .tag inv, el resto texto
+  const chipClass = st.kind === "paid" ? "tag" : st.kind === "late" || st.kind === "today" ? "tag inv" : null;
 
   return (
     <div
+      className="row"
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "8px 10px 8px 12px",
-        borderRadius: 14,
-        background: "var(--surface)",
-        border: "1px solid var(--line)",
+        gap: 8,
+        padding: "8px 8px 8px 16px",
         opacity: paused ? 0.6 : 1,
       }}
     >
       <button
         onClick={onEdit}
-        style={{ display: "flex", alignItems: "center", gap: 11, flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: 0 }}
+        style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: 0, color: "var(--text)" }}
       >
-        <CatBubble icon={cat?.icon || "Repeat"} color={cat?.color || "#9aa0a6"} size={36} stroke={2} />
+        <CatBubble icon={cat?.icon || "Repeat"} color={cat?.color || "#9aa0a6"} size={36} stroke={1.75} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.name}</div>
-          <div style={{ fontSize: 12, color: TONE_COLOR[st.kind], fontWeight: 600, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {freq}
-            {st.label}
+          {/* nombre y monto en la misma línea: el estado (chip largo) ocupa todo el ancho abajo */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ flex: 1, minWidth: 0, fontWeight: 500, fontSize: 14, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.name}</span>
+            <span className="amount" style={{ color: sub.type === "income" ? "var(--income)" : "var(--expense)", flex: "0 0 auto" }}>
+              {fmt(sub.amount, sub.currency)}
+            </span>
           </div>
-        </div>
-        <div className="num tnum" style={{ fontWeight: 600, fontSize: 14.5, color: sub.type === "income" ? "var(--income)" : "var(--text)", flex: "0 0 auto" }}>
-          {fmt(sub.amount, sub.currency)}
+          <div className="caption" style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+            {chipClass ? (
+              <>
+                {freq && <span style={{ whiteSpace: "nowrap" }}>{freq}</span>}
+                <span className={chipClass} style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{st.label}</span>
+              </>
+            ) : (
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {freq}
+                {st.label}
+              </span>
+            )}
+          </div>
         </div>
       </button>
       {sub.status === "Activa" && (
@@ -86,9 +88,9 @@ function SubRow({ sub, today, onEdit, onPay }: { sub: UISub; today: string; onEd
           className="icon-btn"
           title="Registrar pago"
           aria-label="Registrar pago"
-          style={{ width: 44, height: 44, borderRadius: 12, background: actionable ? "var(--accent-soft)" : "var(--bg-2)", flex: "0 0 auto" }}
+          style={{ border: "1.5px solid var(--ink)", background: actionable ? "var(--ink)" : "transparent", flex: "0 0 auto" }}
         >
-          <Icon name="Check" size={18} stroke={2.4} color={actionable ? "var(--accent-ink)" : "var(--text-3)"} />
+          <Icon name="Check" size={18} stroke={1.75} color={actionable ? "var(--paper)" : "var(--text)"} />
         </button>
       )}
     </div>
@@ -122,35 +124,35 @@ export function Recurrentes() {
 
   return (
     <div className="app-scroll" style={{ height: "100%", overflowY: "auto", padding: "8px 16px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "8px 4px 16px" }}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-2)" }}>Gastos fijos por mes</div>
-          <div className="num" style={{ fontSize: 24, fontWeight: 600, color: "var(--text)", marginTop: 2 }}>
-            ≈ {fmt(monthlyTotal, currency)}
+      <div className="card" style={{ marginBottom: 16, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="eyebrow">Gastos fijos por mes</div>
+            <div className="display" style={{ fontSize: 28, color: "var(--text)", marginTop: 4 }}>
+              ≈ {fmt(monthlyTotal, currency)}
+            </div>
           </div>
+          {due > 0 && (
+            <div
+              title={`Fijos de ${monthName}: ${pagados} de ${due} pagados`}
+              aria-label={`Fijos de ${monthName}: ${pagados} de ${due} pagados`}
+              role="status"
+              className={allPaid ? "tag inv" : "tag"}
+              style={{ flex: "0 0 auto" }}
+            >
+              {pagados}/{due} pagados
+            </div>
+          )}
         </div>
         {due > 0 && (
-          <div
-            title={`Fijos de ${monthName}: ${pagados} de ${due} pagados`}
-            aria-label={`Fijos de ${monthName}: ${pagados} de ${due} pagados`}
-            role="status"
-            style={{
-              padding: "6px 12px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 800,
-              background: allPaid ? "var(--accent-soft)" : "var(--bg-2)",
-              color: allPaid ? "var(--accent-ink)" : "var(--text-2)",
-              flex: "0 0 auto",
-            }}
-          >
-            {pagados}/{due} pagados
+          <div className="track" style={{ marginTop: 16 }} aria-hidden="true">
+            <div className="fill" style={{ width: `${Math.min(100, (pagados / due) * 100)}%` }} />
           </div>
         )}
       </div>
 
       {list.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="card" style={{ padding: 0 }}>
           {list.map((s) => (
             <SubRow key={s.id} sub={s} today={today} onEdit={() => setEditing(s)} onPay={() => openConfirmSub(s)} />
           ))}
@@ -159,21 +161,18 @@ export function Recurrentes() {
 
       {subscriptions.length === 0 && (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 32px", gap: 14, textAlign: "center" }}>
-          <div style={{ width: 76, height: 76, borderRadius: "50%", display: "grid", placeItems: "center", background: "var(--bg-2)", color: "var(--text-3)" }}>
-            <Icon name="Repeat" size={34} stroke={1.8} color="var(--text-3)" />
+          <div className="hatch" style={{ width: 76, height: 76, display: "grid", placeItems: "center", border: "1.5px solid var(--ink)" }}>
+            <div style={{ width: 44, height: 44, display: "grid", placeItems: "center", background: "var(--surface)", border: "1.5px solid var(--ink)" }}><Icon name="Repeat" size={24} stroke={1.75} color="var(--text)" /></div>
           </div>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Sin gastos fijos</div>
-          <div style={{ color: "var(--text-2)", fontSize: 14.5, maxWidth: 300, lineHeight: 1.5 }}>
+          <div className="display" style={{ fontSize: 28 }}>Sin gastos fijos</div>
+          <div style={{ color: "var(--text-2)", fontSize: 14, maxWidth: 300, lineHeight: 1.5 }}>
             Agregá tus gastos fijos (alquiler, gimnasio, suscripciones) y registrá cada pago el día que lo hagas.
           </div>
         </div>
       )}
 
-      <button
-        onClick={() => setEditing({ type: newType })}
-        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", padding: "13px", marginTop: 14, borderRadius: 14, border: "1.5px dashed var(--line-strong)", background: "transparent", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14.5, color: "var(--text-2)" }}
-      >
-        <Icon name="Plus" size={19} stroke={2.4} color="var(--text-2)" /> Nuevo fijo
+      <button onClick={() => setEditing({ type: newType })} className="btn btn-primary btn-block" style={{ marginTop: 16 }}>
+        <Icon name="Plus" size={19} stroke={1.75} color="var(--paper)" /> Nuevo fijo
       </button>
 
       {editing && <SubEditor initial={editing} onClose={() => setEditing(null)} onTypeHint={setNewType} />}
