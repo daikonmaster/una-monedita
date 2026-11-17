@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plug, ExternalLink } from "lucide-react";
+import { readConnBackup, saveConnBackup, clearConnBackup } from "@/lib/conn-backup";
 
 const NOTION_TEMPLATE_URL =
   "https://app.notion.com/p/UNA-MONEDITA-copy-3795c48e39b6803da9abf7ab40919b39?source=copy_link";
@@ -96,6 +97,11 @@ function ConnectFlow() {
         body: JSON.stringify({ notionToken: token.trim(), pageUrl: pageUrl.trim(), remember: standalone || remember }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        // con "recordar" el servidor devuelve el mismo valor cifrado de la cookie: se
+        // guarda como respaldo por si Safari la borra al cerrar; sin recordar, no hay copia
+        if (typeof data.backup === "string") saveConnBackup(data.backup);
+        else clearConnBackup();
         try {
           sessionStorage.setItem(JUST_CONNECTED, String(Date.now()));
         } catch {
@@ -213,20 +219,72 @@ export function SetupForm({
 }) {
   // Si recién se conectó y volvió sin conexión, el navegador no guardó la cookie.
   const [lostCookie, setLostCookie] = useState(false);
+  // Restaurando la conexión desde la copia de localStorage (um.conn)
+  const [restoring, setRestoring] = useState(false);
   useEffect(() => {
+    // El token fue rechazado: la copia ya no sirve y no hay que restaurarla.
+    if (reason === "revoked") clearConnBackup();
+
+    let mark = 0;
     try {
-      const mark = Number(sessionStorage.getItem(JUST_CONNECTED));
-      if (mark) {
-        sessionStorage.removeItem(JUST_CONNECTED);
-        // solo cuenta si volvimos enseguida (no horas después en la misma pestaña)
-        if (Date.now() - mark > 30_000) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- lee sessionStorage (no existe en el servidor)
-        if (!connected && reason === "missing") setLostCookie(true);
-      }
+      mark = Number(sessionStorage.getItem(JUST_CONNECTED));
+      if (mark) sessionStorage.removeItem(JUST_CONNECTED);
     } catch {
       /* ignore */
     }
-  }, [connected, reason]);
+
+    // Recién conectado (<30 s) y sin conexión: el navegador no guarda la cookie. Se corta
+    // acá, sin restaurar, para no entrar en un bucle de restauraciones.
+    if (mark && Date.now() - mark <= 30_000 && !connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lee sessionStorage (no existe en el servidor)
+      setLostCookie(true);
+      clearConnBackup();
+      return;
+    }
+
+    const backup = readConnBackup();
+
+    // Sin cookie (Safari iOS la borra al cerrar) pero con copia: restaurarla en silencio.
+    if (!connected && (reason === null || reason === "missing" || reason === "expired") && backup) {
+      let cancelled = false;
+      setRestoring(true);
+      (async () => {
+        try {
+          const res = await fetch("/api/setup/restore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value: backup }),
+          });
+          if (res.ok) {
+            try {
+              sessionStorage.setItem(JUST_CONNECTED, String(Date.now()));
+            } catch {
+              /* ignore */
+            }
+            window.location.replace("/");
+            return;
+          }
+          if (res.status === 401) clearConnBackup();
+        } catch {
+          /* red caída: se conserva la copia */
+        }
+        if (!cancelled) setRestoring(false);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Ya conectado con cookie recordada y sin copia: crearla sin tener que reconectar.
+    if (connected && via === "cookie" && reason !== "revoked" && !backup) {
+      fetch("/api/setup/restore")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { value?: unknown } | null) => {
+          if (data && typeof data.value === "string") saveConnBackup(data.value);
+        })
+        .catch(() => {});
+    }
+  }, [connected, via, reason]);
 
   // Con el token rechazado la cookie sigue "válida" pero ya no sirve: se pide el nuevo
   // en vez de ofrecer "Ir a la app" (que volvería acá).
@@ -281,7 +339,12 @@ export function SetupForm({
         )}
 
         <div className="card-hero" style={{ margin: 8 }}>
-          {showConnected ? (
+          {restoring ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>Reconectando…</div>
+              <div className="caption">Recuperando tu conexión guardada en este navegador.</div>
+            </div>
+          ) : showConnected ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ fontWeight: 700, fontSize: 16 }}>Ya estás conectado</div>

@@ -173,7 +173,9 @@ export async function POST(request: Request) {
   };
   const cookie = await createNotionCookie(creds, remember);
 
-  const res = NextResponse.json({ ok: true });
+  // Con "recordar" se devuelve el mismo valor cifrado para que el cliente guarde su
+  // copia de respaldo (lib/conn-backup.ts); sin recordar no hay copia.
+  const res = NextResponse.json({ ok: true, ...(remember ? { backup: cookie } : {}) });
   res.cookies.set(NOTION_COOKIE, cookie, notionCookieOptions(remember, new URL(request.url).protocol === "https:"));
   // la cookie de la versión con contraseña ya no se usa
   res.cookies.delete(LEGACY_COOKIE);
