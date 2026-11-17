@@ -7,6 +7,7 @@ import { Coin } from "./Coin";
 import { SegmentedControl } from "./ui";
 import { Sheet, SheetHeader, ConfirmRow } from "./Sheet";
 import { fmt, parseAmount } from "@/lib/format";
+import { clearConnBackup } from "@/lib/conn-backup";
 
 const NOTION_TEMPLATE_URL =
   "https://app.notion.com/p/UNA-MONEDITA-copy-3795c48e39b6803da9abf7ab40919b39?source=copy_link";
@@ -48,6 +49,8 @@ function NotionSection() {
     try {
       const res = await fetch("/api/setup", { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // sin esto /setup restauraría la conexión desde la copia de localStorage
+      clearConnBackup();
       window.location.replace("/setup");
     } catch (err) {
       console.error(err);

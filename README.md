@@ -33,6 +33,7 @@ Qué pasa después:
 
 - La conexión queda en **una cookie cifrada de ese dispositivo** (`__Host-um_notion` en producción, `um_notion` en desarrollo). El servidor no guarda nada.
 - **Recordar en este dispositivo** (marcado por defecto): la cookie dura 400 días. Sin recordar, se borra al cerrar el navegador (y vence a las 24 h). En la app instalada siempre recuerda.
+- **Respaldo para Safari (iPhone):** Safari borra las cookies al cerrar el navegador, así que con "Recordar" la app guarda además una copia del mismo valor cifrado en el almacenamiento local del navegador (`um.conn`) y, si la cookie desaparece, la restaura sola al abrir `/setup` (verás "Reconectando…"). Nunca se guarda tu token de Notion en claro. Se borra al desconectar o cuando el token deja de servir. Los dispositivos ya conectados crean su copia solos la próxima vez que abren la app.
 - El gestor de contraseñas (llavero de iCloud, Chrome) ofrece guardar el token y la URL para completarlos en otro dispositivo.
 - **iPhone:** la app instalada en la pantalla de inicio tiene sus propias cookies, separadas de Safari. Conectala una vez dentro de la app instalada.
 - **Ajustes → Notion:** muestra el estado, **Cambiar de cuenta de Notion** (vuelve a `/setup`) y **Desconectar Notion** (borra la cookie de este dispositivo y te lleva a `/setup`). Tus datos quedan en Notion.
@@ -178,7 +179,8 @@ Reglas:
 - **Una sola credencial:** la cookie cifrada (JWE `dir`/`A256GCM`, clave derivada de `AUTH_COOKIE_SECRET` o, si falta, de una generada al compilar) con el token y los IDs de las bases. `httpOnly`, `SameSite=Lax`, `Secure` y prefijo `__Host-` en producción.
 - **Sin cookie válida solo se ve `/setup`:** páginas redirigen a `/setup`, la API responde `401 { code: "notion_disconnected" }`.
 - **CSRF:** como `/setup` es público, el proxy corta antes de cualquier ruta (`lib/auth/csrf.ts`): a `/api/*` no se llega navegando desde otro sitio, las escrituras exigen mismo origen (`Origin` / `Sec-Fetch-Site`) y el cuerpo debe ser `application/json` (un formulario ajeno no puede enviarlo). Evita que otro sitio conecte tu navegador al Notion de un atacante.
-- **Límite de intentos** en `/api/setup` (10 cada 15 minutos por IP).
+- **Límite de intentos** en `/api/setup` (10 cada 15 minutos por IP) y en `/api/setup/restore` (20).
+- **Respaldo de la conexión (`um.conn`):** copia del mismo JWE de la cookie en localStorage, para que Safari iOS no pida reconectar al cerrarse. Es cifrado con el secreto del servidor (nunca el token en claro), pero a diferencia de la cookie `httpOnly` lo puede leer el JS de la página: trade-off aceptado. Se borra al desconectar, con token rechazado o si el servidor la declara inválida.
 - **Sin respaldo de servidor:** `lib/notion/*` exige las credenciales de cada pedido; nunca cae a variables de entorno. Las `NOTION_*` y `DEV_AUTH_BYPASS` son solo para desarrollo en `localhost` (el bypass exige `NODE_ENV=development`, `DEV_AUTH_BYPASS=1` y un host local, así que no sirve desde la red local ni con DNS rebinding). **Nunca** definirlas en Vercel.
 - **Rotar `AUTH_COOKIE_SECRET`** desconecta a todos los dispositivos. Sin esa variable, `next.config.ts` genera una clave al azar al compilar (`.next/cache/um-auth-secret`, inlineada como `UM_BUILD_SECRET` en el código del servidor): la app funciona sin configurar nada, pero si se rehace el build sin esa caché la clave cambia y hay que reconectar. `/setup` lo avisa.
 - **`POST /api/seed?reset=1`** archiva todas las categorías: es POST con JSON y mismo origen, no un link.
@@ -204,12 +206,13 @@ Esquema completo en [`docs/NOTION-SCHEMA.md`](docs/NOTION-SCHEMA.md) (también s
 
 ## API
 
-Todas las rutas (salvo `/api/setup`) requieren la cookie de conexión. Los fallos de Notion responden `502 { error, code, message }`; un token rechazado, `401 { code: "notion_token_invalid" }`.
+Todas las rutas (salvo `/api/setup` y `/api/setup/restore`) requieren la cookie de conexión. Los fallos de Notion responden `502 { error, code, message }`; un token rechazado, `401 { code: "notion_token_invalid" }`.
 
 | Ruta | Método | Función |
 |------|--------|---------|
 | `/api/setup` | POST | Conecta Notion (`notionToken`, `pageUrl`, `remember`): valida el token, encuentra las 6 bases, agrega las propiedades que falten a Subscriptions y Transactions (`PaymentMethod`; si falla, no bloquea) y guarda la cookie. Pública, con límite de intentos |
 | `/api/setup` | DELETE | Desconecta este dispositivo (borra la cookie). Idempotente |
+| `/api/setup/restore` | POST / GET | POST `{ value }`: restaura la cookie desde la copia `um.conn` de localStorage (`401 backup_invalid` si no sirve). GET: devuelve `{ value }` de la cookie recordada para crear esa copia (`404` si no hay). Pública, con CSRF y límite de intentos |
 | `/api/me` | GET | Estado de la conexión `{ connected, via, remember }`; `?full=1` suma los IDs y la página padre |
 | `/api/transactions` | GET / POST | Lista por año (`?year=`) / crea (`paymentMethod` opcional, solo gastos) |
 | `/api/transactions/[id]` | PATCH / DELETE | Edita (`paymentMethod: null` lo borra) / borra |

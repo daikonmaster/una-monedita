@@ -18,9 +18,10 @@ import { csrfVerdict } from "@/lib/auth/csrf";
 // Acceso sin contraseña: la cookie con las credenciales de Notion es la única
 // credencial. Orden (importa):
 //   1. secreto de cookies inválido → 503
-//   2. CSRF de /api/* (ANTES del bypass y de las rutas públicas, /api/setup incluida)
+//   2. CSRF de /api/* (ANTES del bypass y de las rutas públicas, /api/setup y
+//      /api/setup/restore incluidas)
 //   3. bypass de desarrollo (solo localhost)
-//   4. rutas públicas: /setup y /api/setup
+//   4. rutas públicas: /setup, /api/setup y /api/setup/restore
 //   5. atajos de compatibilidad con la versión con contraseña
 //   6. cookie válida → pasa
 //   7. migración desde la cookie vieja um_session
@@ -72,7 +73,9 @@ export async function proxy(req: NextRequest) {
   if (devAuthBypass(host)) return NextResponse.next();
 
   // 4. Públicas (igualdad exacta: nada de startsWith).
-  if (pathname === "/setup" || pathname === "/api/setup") return NextResponse.next();
+  if (pathname === "/setup" || pathname === "/api/setup" || pathname === "/api/setup/restore") {
+    return NextResponse.next();
+  }
 
   const cookieHeader = req.headers.get("cookie") ?? "";
   const freshRaw = getCookie(cookieHeader, NOTION_COOKIE);
